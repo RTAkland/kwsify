@@ -32,7 +32,13 @@ class Kwsify(address: InetSocketAddress) : WebSocketServer(address) {
     }
 
     override fun onOpen(conn: WebSocket, handshake: ClientHandshake) {
-        println("New connection connected. ${conn.remoteSocketAddress}")
+        val validEndpoints = listOf("subscribe", "publish")
+        val endpoint = conn.resourceDescriptor.replace("/", "")
+        if (!validEndpoints.contains(endpoint)) {
+            conn.close(1000, "This endpoint is invalid.")
+        } else {
+            println("New connection connected. ${conn.remoteSocketAddress}")
+        }
     }
 
     override fun onClose(conn: WebSocket, code: Int, reason: String, remote: Boolean) {
