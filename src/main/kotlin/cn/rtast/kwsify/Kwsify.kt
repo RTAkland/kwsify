@@ -18,7 +18,12 @@ package cn.rtast.kwsify
 
 import cn.rtast.kwsify.endpoints.PublishEndpoint
 import cn.rtast.kwsify.endpoints.SubscribeEndpoint
-import cn.rtast.kwsify.models.SessionModel
+import cn.rtast.kwsify.enums.ActionType
+import cn.rtast.kwsify.models.Action
+import cn.rtast.kwsify.models.Session
+import cn.rtast.kwsify.utils.ArgumentsParser
+import cn.rtast.kwsify.utils.fromJson
+import com.google.gson.JsonSyntaxException
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
@@ -28,11 +33,12 @@ import java.net.InetSocketAddress
 class Kwsify(address: InetSocketAddress) : WebSocketServer(address) {
 
     companion object {
-        val sessions = mutableListOf<SessionModel>()
+        private val validEndpoints = listOf("subscribe", "publish")
+
+        val sessions = mutableListOf<Session>()
     }
 
     override fun onOpen(conn: WebSocket, handshake: ClientHandshake) {
-        val validEndpoints = listOf("subscribe", "publish")
         val endpoint = conn.resourceDescriptor.replace("/", "")
         if (!validEndpoints.contains(endpoint)) {
             conn.close(1000, "This endpoint is invalid.")
@@ -54,11 +60,27 @@ class Kwsify(address: InetSocketAddress) : WebSocketServer(address) {
 
     override fun onMessage(conn: WebSocket, message: String) {
         val endpoint = conn.resourceDescriptor.replace("/", "")
-        when (endpoint) {
-            "subscribe" -> SubscribeEndpoint().onMessage(conn, message)
-            "publish" -> PublishEndpoint().onMessage(conn, message)
+        try {
+            val jsonPayload = message.fromJson<Action>()
+            val action = jsonPayload.action
+            if (action == ActionType.Publish && endpoint == "publish") {
+                PublishEndpoint().onMessage(conn, jsonPayload)
+            } else if (action == ActionType.Subscribe && endpoint == "subscribe") {
+                SubscribeEndpoint().onMessage(conn, jsonPayload)
+            } else if (action == ActionType.Unsubscribe && endpoint == "subscribe") {
+                sessions.forEachIndexed { i, s ->
+                    if (s.session == conn) {
+                        sessions.removeAt(i)
+                    }
+                }
+            } else {
+                println("Unknown operation.")
+            }
+        } catch (_: JsonSyntaxException) {
+            conn.send("Json Syntax exception!")
+        } finally {
+            println("Current sessions: $sessions")
         }
-        println("Current session: $sessions")
     }
 
     override fun onError(conn: WebSocket, ex: Exception) {
@@ -71,10 +93,7 @@ class Kwsify(address: InetSocketAddress) : WebSocketServer(address) {
 }
 
 fun main(args: Array<String>) {
-    val server: Kwsify = if (args.isEmpty()) {
-        Kwsify(InetSocketAddress("0.0.0.0", 5050))
-    } else {
-        Kwsify(InetSocketAddress(args[0], args[1].toInt()))
-    }
+    val conf = ArgumentsParser(args).parse()
+    val server = Kwsify(InetSocketAddress(conf.host, conf.port))
     server.start()
 }

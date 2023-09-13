@@ -16,7 +16,9 @@
 
 package cn.rtast.kwsify.models
 
-data class PublishModel(
+import org.java_websocket.WebSocket
+
+data class Session(
     val channel: String,
-    val payload: String
+    val session: WebSocket
 )

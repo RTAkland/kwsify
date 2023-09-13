@@ -17,27 +17,19 @@
 package cn.rtast.kwsify.endpoints
 
 import cn.rtast.kwsify.Kwsify
-import cn.rtast.kwsify.models.PublishModel
-import cn.rtast.kwsify.models.response.SyntaxErrorResponse
-import cn.rtast.kwsify.utils.fromJson
-import cn.rtast.kwsify.utils.toJsonString
+import cn.rtast.kwsify.models.Action
 import com.google.gson.JsonSyntaxException
 import org.java_websocket.WebSocket
 
 class PublishEndpoint {
 
-    fun onMessage(conn: WebSocket, message: String) {
+    fun onMessage(conn: WebSocket, message: Action) {
         try {
-            val publishModel = message.fromJson<PublishModel>()
             Kwsify.sessions.forEach {
-                it.session.send(PublishModel(publishModel.channel, publishModel.payload).toJsonString())
+                it.session.send(message.payload)
             }
         } catch (_: JsonSyntaxException) {
-            conn.send(
-                SyntaxErrorResponse(
-                    5002, "Json syntax error! Syntax: {\"channel\": \"<Your channel here>\"}"
-                ).toJsonString()
-            )
+            conn.send("Json syntax exception!")
         }
     }
 }

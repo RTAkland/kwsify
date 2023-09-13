@@ -14,9 +14,12 @@
  *    limitations under the License.
  */
 
-package cn.rtast.kwsify.models.response
+package cn.rtast.kwsify.models
 
-data class SyntaxErrorResponse(
-    val code: Int,
-    val reason: String
+import cn.rtast.kwsify.enums.ActionType
+
+data class Action(
+    val action: ActionType,
+    val channel: String,
+    val payload: String
 )

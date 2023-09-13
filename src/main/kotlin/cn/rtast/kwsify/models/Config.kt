@@ -16,9 +16,7 @@
 
 package cn.rtast.kwsify.models
 
-import org.java_websocket.WebSocket
-
-data class SessionModel(
-    val channel: String,
-    val session: WebSocket
+data class Config(
+    val host: String,
+    val port: Int
 )

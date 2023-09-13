@@ -17,42 +17,26 @@
 package cn.rtast.kwsify.endpoints
 
 import cn.rtast.kwsify.Kwsify
-import cn.rtast.kwsify.models.ActionModel
-import cn.rtast.kwsify.models.SessionModel
-import cn.rtast.kwsify.models.response.AlreadySubResponse
-import cn.rtast.kwsify.models.response.SyntaxErrorResponse
-import cn.rtast.kwsify.utils.fromJson
-import cn.rtast.kwsify.utils.toJsonString
+import cn.rtast.kwsify.enums.ActionType
+import cn.rtast.kwsify.models.Action
+import cn.rtast.kwsify.models.Session
 import com.google.gson.JsonSyntaxException
 import org.java_websocket.WebSocket
 
 class SubscribeEndpoint {
 
-    fun onMessage(conn: WebSocket, message: String) {
+    fun onMessage(conn: WebSocket, message: Action) {
         try {
-            val subscribeModel = message.fromJson<ActionModel>()
-            val session = SessionModel(subscribeModel.channel, conn)
-            if (subscribeModel.action.lowercase() == "subscribe") {
-                // subscribe
+            val session = Session(message.channel, conn)
+            if (message.action == ActionType.Subscribe) {
                 if (!Kwsify.sessions.contains(session)) {
                     Kwsify.sessions.add(session)
                 } else {
-                    conn.send(AlreadySubResponse(5001, "This connection is already subscribed!").toJsonString())
-                }
-            } else {
-                // unsubscribe
-                Kwsify.sessions.forEachIndexed { i, s ->
-                    if (s.session == conn) {
-                        Kwsify.sessions.removeAt(i)
-                    }
+                    conn.send("This connection is already subscribed!")
                 }
             }
         } catch (_: JsonSyntaxException) {
-            conn.send(
-                SyntaxErrorResponse(
-                    5002, "Json syntax error! Syntax: {\"channel\": \"<Your channel here>\"}"
-                ).toJsonString()
-            )
+            conn.send("Json syntax exception!")
         }
     }
 }

@@ -14,9 +14,10 @@
  *    limitations under the License.
  */
 
-package cn.rtast.kwsify.models
+package cn.rtast.kwsify.enums
 
-data class ActionModel(
-    val action: String,
-    val channel: String
-)
+enum class ActionType {
+    Publish,
+    Subscribe,
+    Unsubscribe
+}

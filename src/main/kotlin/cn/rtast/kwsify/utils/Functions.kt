@@ -16,8 +16,6 @@
 
 package cn.rtast.kwsify.utils
 
-import cn.rtast.kwsify.models.ConfigModel
-import java.io.File
 import kotlin.random.Random
 
 fun genRndString(length: Int): String {
