@@ -28,14 +28,12 @@ class ArgumentsParser(private val args: Array<String>) {
     fun parse(): Config {
         val host by parser.option(
             ArgType.String,
-            shortName = "h",
             fullName = "host",
             description = "Host to listen"
         ).default("0.0.0.0")
 
         val port by parser.option(
             ArgType.Int,
-            shortName = "p",
             fullName = "port",
             description = "Port to listen"
         ).default(5050)

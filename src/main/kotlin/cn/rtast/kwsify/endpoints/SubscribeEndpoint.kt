@@ -31,6 +31,7 @@ class SubscribeEndpoint {
             if (message.action == ActionType.Subscribe) {
                 if (!Kwsify.sessions.contains(session)) {
                     Kwsify.sessions.add(session)
+                    conn.send("Subscribed!")
                 } else {
                     conn.send("This connection is already subscribed!")
                 }

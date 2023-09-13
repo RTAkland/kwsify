@@ -68,13 +68,22 @@ class Kwsify(address: InetSocketAddress) : WebSocketServer(address) {
             } else if (action == ActionType.Subscribe && endpoint == "subscribe") {
                 SubscribeEndpoint().onMessage(conn, jsonPayload)
             } else if (action == ActionType.Unsubscribe && endpoint == "subscribe") {
-                sessions.forEachIndexed { i, s ->
-                    if (s.session == conn) {
-                        sessions.removeAt(i)
+                try {
+                    if (!sessions.contains(Session(jsonPayload.channel, conn))) {
+                        conn.send("Already unsubscribed!")
+                    } else {
+                        sessions.forEachIndexed { i, s ->
+                            if (s.session == conn) {
+                                sessions.removeAt(i)
+                            }
+                        }
                     }
+                } catch (_: ConcurrentModificationException) {
+                    println("Removed")
                 }
             } else {
-                println("Unknown operation.")
+                conn.send("Unknown operation!")
+                println("Unknown operation!")
             }
         } catch (_: JsonSyntaxException) {
             conn.send("Json Syntax exception!")

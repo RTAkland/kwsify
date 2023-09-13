@@ -28,6 +28,7 @@ class PublishEndpoint {
             Kwsify.sessions.forEach {
                 it.session.send(message.payload)
             }
+            conn.send("Published!")
         } catch (_: JsonSyntaxException) {
             conn.send("Json syntax exception!")
         }
