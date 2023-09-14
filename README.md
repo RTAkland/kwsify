@@ -15,8 +15,6 @@ $ # 默认的监听地址为: 0.0.0.0:5050
 $ java -jar kwsify.jar [--host 0.0.0.0] [--port 6060]
 ```
 
-## Subscribe
-
 > 使用Websocket连接到服务器
 
 ```shell
