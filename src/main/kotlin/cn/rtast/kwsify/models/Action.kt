@@ -20,6 +20,7 @@ import cn.rtast.kwsify.enums.ActionType
 
 data class Action(
     val action: ActionType,
+    val clientId: String,
     val channel: String,
     val payload: String
 )

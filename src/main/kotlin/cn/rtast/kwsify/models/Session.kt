@@ -20,5 +20,6 @@ import org.java_websocket.WebSocket
 
 data class Session(
     val channel: String,
+    val clientId: String,
     val session: WebSocket
 )

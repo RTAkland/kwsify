@@ -62,15 +62,15 @@ class Kwsify(address: InetSocketAddress) : WebSocketServer(address) {
         val endpoint = conn.resourceDescriptor.replace("/", "")
         try {
             val jsonPayload = message.fromJson<Action>()
-            val action = jsonPayload.action
-            if (action == ActionType.Publish && endpoint == "publish") {
+            val action = jsonPayload.action.name.lowercase()
+            if (action == ActionType.Publish.name.lowercase() && endpoint == "publish") {
                 PublishEndpoint().onMessage(conn, jsonPayload)
-            } else if (action == ActionType.Subscribe && endpoint == "subscribe") {
+            } else if (action == ActionType.Subscribe.name.lowercase() && endpoint == "subscribe") {
                 SubscribeEndpoint().onMessage(conn, jsonPayload)
-            } else if (action == ActionType.Unsubscribe && endpoint == "subscribe") {
+            } else if (action == ActionType.Unsubscribe.name.lowercase() && endpoint == "subscribe") {
                 try {
-                    if (!sessions.contains(Session(jsonPayload.channel, conn))) {
-                        conn.send("Already unsubscribed!")
+                    if (!sessions.contains(Session(jsonPayload.channel, jsonPayload.clientId, conn))) {
+                        conn.send(">Already unsubscribed!")
                     } else {
                         sessions.forEachIndexed { i, s ->
                             if (s.session == conn) {
@@ -86,7 +86,9 @@ class Kwsify(address: InetSocketAddress) : WebSocketServer(address) {
                 println("Unknown operation!")
             }
         } catch (_: JsonSyntaxException) {
-            conn.send("Json Syntax exception!")
+            conn.send(">Json syntax exception!")
+        } catch (_: NullPointerException) {
+            conn.send(">Json syntax exception")
         } finally {
             println("Current sessions: $sessions")
         }

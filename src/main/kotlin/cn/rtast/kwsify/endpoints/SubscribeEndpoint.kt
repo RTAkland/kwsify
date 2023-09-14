@@ -27,17 +27,17 @@ class SubscribeEndpoint {
 
     fun onMessage(conn: WebSocket, message: Action) {
         try {
-            val session = Session(message.channel, conn)
+            val session = Session(message.channel, message.clientId, conn)
             if (message.action == ActionType.Subscribe) {
                 if (!Kwsify.sessions.contains(session)) {
                     Kwsify.sessions.add(session)
-                    conn.send("Subscribed!")
+                    println("Subscribed!")
                 } else {
-                    conn.send("This connection is already subscribed!")
+                    conn.send(">This connection is already subscribed!")
                 }
             }
         } catch (_: JsonSyntaxException) {
-            conn.send("Json syntax exception!")
+            conn.send(">Json syntax exception!")
         }
     }
 }
