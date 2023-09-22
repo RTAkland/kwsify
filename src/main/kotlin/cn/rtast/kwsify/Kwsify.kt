@@ -20,8 +20,10 @@ import cn.rtast.kwsify.endpoints.PublishEndpoint
 import cn.rtast.kwsify.endpoints.SubscribeEndpoint
 import cn.rtast.kwsify.enums.ActionType
 import cn.rtast.kwsify.models.Action
+import cn.rtast.kwsify.models.Config
 import cn.rtast.kwsify.models.Session
 import cn.rtast.kwsify.utils.ArgumentsParser
+import cn.rtast.kwsify.utils.ConfigUtil
 import cn.rtast.kwsify.utils.fromJson
 import com.google.gson.JsonSyntaxException
 import org.java_websocket.WebSocket
@@ -36,6 +38,10 @@ class Kwsify(address: InetSocketAddress) : WebSocketServer(address) {
         private val validEndpoints = listOf("subscribe", "publish")
 
         val sessions = mutableListOf<Session>()
+
+        private val conf = ConfigUtil().readConf()
+
+        val minClientIdLength = this.conf.minClientIdLength
     }
 
     override fun onOpen(conn: WebSocket, handshake: ClientHandshake) {
@@ -59,7 +65,7 @@ class Kwsify(address: InetSocketAddress) : WebSocketServer(address) {
     }
 
     override fun onMessage(conn: WebSocket, message: String) {
-        val endpoint = conn.resourceDescriptor.replace("/", "")
+        val endpoint = conn.resourceDescriptor.replace("/", "").lowercase()
         try {
             val jsonPayload = message.fromJson<Action>()
             val action = jsonPayload.action.name.lowercase()
@@ -99,12 +105,18 @@ class Kwsify(address: InetSocketAddress) : WebSocketServer(address) {
     }
 
     override fun onStart() {
-        println("Server started.")
+        println("Server started at [${this.address.address.hostAddress}:${this.address.port}]")
     }
 }
 
-fun main(args: Array<String>) {
-    val conf = ArgumentsParser(args).parse()
+fun main(args: Array<String>?) {
+    val conf: Config = if (args.isNullOrEmpty()) {
+        println("Args via config file.")
+        ConfigUtil().readConf()
+    } else {
+        println("Args via command line.")
+        ArgumentsParser(args).parse()
+    }
     val server = Kwsify(InetSocketAddress(conf.host, conf.port))
     server.start()
 }

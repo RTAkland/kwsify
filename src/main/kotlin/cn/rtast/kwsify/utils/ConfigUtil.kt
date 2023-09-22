@@ -14,10 +14,23 @@
  *    limitations under the License.
  */
 
-package cn.rtast.kwsify.models
+package cn.rtast.kwsify.utils
 
-data class Config(
-    val host: String,
-    val port: Int,
-    val minClientIdLength: Int
-)
+import cn.rtast.kwsify.models.Config
+import java.io.File
+
+class ConfigUtil {
+
+    private val file = File("./conf.json")
+
+    init {
+        if (!this.file.exists()) {
+            this.file.createNewFile()
+            this.file.writeText(Config("0.0.0.0", 5050, 10).toJsonString())
+        }
+    }
+
+    fun readConf(): Config {
+        return this.file.readText().fromJson<Config>()
+    }
+}

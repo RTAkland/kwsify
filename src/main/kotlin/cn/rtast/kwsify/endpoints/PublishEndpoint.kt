@@ -25,14 +25,15 @@ class PublishEndpoint {
 
     fun onMessage(conn: WebSocket, message: Action) {
         try {
-            if (message.clientId.length != 25) {
+            if (message.clientId.length <= Kwsify.minClientIdLength) {
                 conn.send(">Please make sure the length of client id is long than 25.")
+            } else {
+                val filteredSessions = Kwsify.sessions.filter { it.clientId == message.clientId }
+                filteredSessions.forEach {
+                    it.session.send(message.payload)
+                }
+                println("Published to ${message.channel} (${message.clientId})")
             }
-            val filteredSessions = Kwsify.sessions.filter { it.clientId == message.clientId }
-            filteredSessions.forEach {
-                it.session.send(message.payload)
-            }
-            println("Published to ${message.channel} (${message.clientId})")
         } catch (_: JsonSyntaxException) {
             conn.send(">Json syntax exception!")
         }

@@ -38,8 +38,14 @@ class ArgumentsParser(private val args: Array<String>) {
             description = "Port to listen"
         ).default(5050)
 
+        val minClientIdLength by parser.option(
+            ArgType.Int,
+            fullName = "mcl",
+            description = "Min Client Id Length"
+        ).default(10)
+
         parser.parse(args)
 
-        return Config(host, port)
+        return Config(host, port, minClientIdLength)
     }
 }
