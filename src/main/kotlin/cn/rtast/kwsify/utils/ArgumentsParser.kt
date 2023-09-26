@@ -41,11 +41,15 @@ class ArgumentsParser(private val args: Array<String>) {
         val minClientIdLength by parser.option(
             ArgType.Int,
             fullName = "mcl",
-            description = "Min Client Id Length"
+            description = "Minimum client id length"
         ).default(10)
 
+        val randomClientId by parser.option(
+            ArgType.Boolean,
+            fullName = "rci",
+            description = "Randomized client id for new subscribers"
+        ).default(true)
         parser.parse(args)
-
-        return Config(host, port, minClientIdLength)
+        return Config(host, port, minClientIdLength, randomClientId)
     }
 }

@@ -14,14 +14,8 @@
  *    limitations under the License.
  */
 
-package cn.rtast.kwsify.models
+package cn.rtast.kwsify.enums
 
-import cn.rtast.kwsify.enums.ActionType
-
-data class Action(
-    val action: ActionType,
-    val clientId: String?,
-    val channel: String,
-    val payload: String
-)
-
+enum class Endpoints {
+    Subscribe, Publish
+}

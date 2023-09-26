@@ -16,6 +16,7 @@
 
 package cn.rtast.kwsify.utils
 
+import java.util.*
 import kotlin.random.Random
 
 fun genRndString(length: Int): String {
@@ -24,4 +25,8 @@ fun genRndString(length: Int): String {
         .map { Random.nextInt(0, charPool.size) }
         .map(charPool::get)
         .joinToString("")
+}
+
+fun getTimestamp(): Long {
+    return Date().time
 }

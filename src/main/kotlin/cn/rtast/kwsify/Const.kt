@@ -14,14 +14,9 @@
  *    limitations under the License.
  */
 
-package cn.rtast.kwsify.models
+package cn.rtast.kwsify
 
-import cn.rtast.kwsify.enums.ActionType
-
-data class Action(
-    val action: ActionType,
-    val clientId: String?,
-    val channel: String,
-    val payload: String
-)
-
+const val alreadyExists = "This connection is already subscribed to this channel: "
+const val errorJsonSyntax = "Json syntax error, please make sure your json syntax is correct!"
+const val invalidEndpoint = "This endpoint is invalid! Valid endpoints: subscribe, publish"
+const val sentSuccessfully = "Successfully sent to the client!"

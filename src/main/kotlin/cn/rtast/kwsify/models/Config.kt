@@ -19,5 +19,6 @@ package cn.rtast.kwsify.models
 data class Config(
     val host: String,
     val port: Int,
-    val minClientIdLength: Int
+    val minClientIdLength: Int,
+    val randomClientId: Boolean
 )

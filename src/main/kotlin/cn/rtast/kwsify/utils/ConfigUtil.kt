@@ -26,7 +26,7 @@ class ConfigUtil {
     init {
         if (!this.file.exists()) {
             this.file.createNewFile()
-            this.file.writeText(Config("0.0.0.0", 5050, 10).toJsonString())
+            this.file.writeText(Config("0.0.0.0", 5050, 10, true).toJsonString())
         }
     }
 

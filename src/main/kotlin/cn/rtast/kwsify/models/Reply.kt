@@ -16,12 +16,10 @@
 
 package cn.rtast.kwsify.models
 
-import cn.rtast.kwsify.enums.ActionType
+import cn.rtast.kwsify.enums.MsgType
 
-data class Action(
-    val action: ActionType,
-    val clientId: String?,
-    val channel: String,
-    val payload: String
+data class Reply(
+    val timestamp: Long,
+    val msgType: MsgType,
+    val msgBody: String
 )
-

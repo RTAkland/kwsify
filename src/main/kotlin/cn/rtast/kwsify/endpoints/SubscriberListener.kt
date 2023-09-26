@@ -14,14 +14,22 @@
  *    limitations under the License.
  */
 
-package cn.rtast.kwsify.models
+package cn.rtast.kwsify.endpoints
 
-import cn.rtast.kwsify.enums.ActionType
+import cn.rtast.kwsify.KwServer
+import cn.rtast.kwsify.enums.MsgType
+import cn.rtast.kwsify.models.Reply
+import cn.rtast.kwsify.utils.getTimestamp
+import cn.rtast.kwsify.utils.toJsonString
+import org.java_websocket.WebSocket
 
-data class Action(
-    val action: ActionType,
-    val clientId: String?,
-    val channel: String,
-    val payload: String
-)
 
+class SubscriberListener {
+    fun onEvent(connection: WebSocket, clientId: String, channel: String, payload: String) {
+        KwServer.sessions.forEach {
+            if (it.clientId == clientId && it.channel == channel) {
+                connection.send(Reply(getTimestamp(), MsgType.Message, payload).toJsonString())
+            }
+        }
+    }
+}

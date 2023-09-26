@@ -18,6 +18,7 @@ package cn.rtast.kwsify.utils
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import java.net.http.WebSocket
 
 fun Any.toJsonString(): String {
     return Gson().toJson(this)
