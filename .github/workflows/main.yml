@@ -31,3 +31,24 @@ jobs:
         with:
           name: Kwsify
           path: build/libs/*.jar
+      - name: Create Git Tag
+        id: create_tag
+        run: |
+          version=$(grep -oP '(?<=version = ").*(?=")' build.gradle.kts)
+          git tag $version
+          echo "::set-output name=tag::$version"
+
+      - name: Rename artifact file
+        id: rename_artifact_file
+        run: mv build/libs/*-all.jar .kwsify-${{ steps.create_tag.outputs.tag }}.jar
+
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file:  build/libs/kwsify-${{ steps.create_tag.outputs.tag }}.jar
+          tag: ${{ steps.create_tag.outputs.tag }}
+          release_name: ${{ steps.create_tag.outputs.tag }}
+          overwrite: true
+          file_glob: true
+          body: "Release for ref ${{ github.ref }}, tag: ${{ steps.create_tag.outputs.tag }}"
