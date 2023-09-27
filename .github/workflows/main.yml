@@ -44,11 +44,11 @@ jobs:
         run: |
           version=$(grep -oP '(?<=version = ").*(?=")' build.gradle.kts)
           git tag $version
-          echo "etag=$version" >> $GITHUB_OUTPUT
+          echo "tag=$version" >> $GITHUB_OUTPUT
 
       - name: Generate Native Image
         id: gen_native_image
-        run: native-image -jar ./kwsify-${{ etag }}.jar
+        run: native-image -jar ./kwsify-${{ steps.create_tag.outputs.tag }}.jar
 
       - name: Rename artifact file
         id: rename_artifact_file
@@ -63,4 +63,4 @@ jobs:
           release_name: ${{ steps.create_tag.outputs.tag }}-Release
           overwrite: true
           file_glob: true
-          body: "Release for ref ${{ github.ref }}, tag: ${{ steps.create_tag.outputs.tag }}"
+          body: "Release for tag: ${{ steps.create_tag.outputs.tag }}"
