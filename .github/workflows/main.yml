@@ -23,7 +23,7 @@ jobs:
       - name: Make Gradle wrapper executable
         if: ${{ runner.os != 'Windows' }}
         run: chmod +x ./gradlew
-      - name: Build
+      - name: Build with shadowJar
         run: ./gradlew shadowJar
       - name: Upload build artifacts
         if: ${{ runner.os == 'Linux' && matrix.java == '8' }}
@@ -40,15 +40,15 @@ jobs:
 
       - name: Rename artifact file
         id: rename_artifact_file
-        run: mv build/libs/*-all.jar .kwsify-${{ steps.create_tag.outputs.tag }}.jar
+        run: mv ./build/libs/*-all.jar ./kwsify-${{ steps.create_tag.outputs.tag }}.jar
 
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file:  build/libs/kwsify-${{ steps.create_tag.outputs.tag }}.jar
+          repo_token: ${{ secrets.REPO_TOKEN }}
+          file:  ./build/libs/kwsify-${{ steps.create_tag.outputs.tag }}.jar
           tag: ${{ steps.create_tag.outputs.tag }}
-          release_name: ${{ steps.create_tag.outputs.tag }}
+          release_name: ${{ steps.create_tag.outputs.tag }}-Release
           overwrite: true
           file_glob: true
           body: "Release for ref ${{ github.ref }}, tag: ${{ steps.create_tag.outputs.tag }}"
