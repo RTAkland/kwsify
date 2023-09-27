@@ -23,26 +23,6 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: ${{ matrix.java }}
-          
-      - name: Make Gradle wrapper executable
-        if: ${{ runner.os != 'Windows' }}
-        run: chmod +x ./gradlew
-        
-      - name: Build with shadowJar
-        if: ${{ runner.os == 'Linux' }}
-        run: ./gradlew shadowJar
-        
-      - name: Create Git Tag
-        id: create_tag
-        run: |
-          version=$(grep -oP '(?<=version = ").*(?=")' build.gradle.kts)
-          git tag $version
-          echo "::set-output name=tag::$version"
-          echo "tag=$version" >> $etag
-
-      - name: Rename artifact file
-        id: rename_artifact_file
-        run: mv ./build/libs/*-all.jar ./kwsify-${{ etag }}.jar
 
       - name: Setup graalvm
         uses: graalvm/setup-graalvm@v1
@@ -51,24 +31,36 @@ jobs:
           distribution: 'graalvm'
           github-token: ${{ secrets.repo_token }}
           native-image-job-reports: 'true'
+          
+      - name: Make Gradle wrapper executable
+        if: ${{ runner.os != 'Windows' }}
+        run: chmod +x ./gradlew
+        
+      - name: Build with shadowJar
+        run: ./gradlew shadowJar
+        
+      - name: Create Git Tag
+        id: create_tag
+        run: |
+          version=$(grep -oP '(?<=version = ").*(?=")' build.gradle.kts)
+          git tag $version
+          echo "etag=$version" >> $GITHUB_OUTPUT
 
-      - name: Generate Native Image for windows
-        id: gen_native_image_windows
-        if: ${{ runner.os == 'windows' }}
+      - name: Generate Native Image
+        id: gen_native_image
         run: native-image -jar ./kwsify-${{ etag }}.jar
 
-      - name: Generate Native Image for Linux
-        id: gen_native_image_linux
-        if: ${{ runner.os == 'linux' }}
-        run: native-image -jar ./kwsify-${{ etag }}.jar -o kwsify-${{ etag }}-${{ os.arch }}
+      - name: Rename artifact file
+        id: rename_artifact_file
+        run: mv ./build/libs/*-all.jar ./kwsify-${{ steps.create_tag.outputs.tag }}.jar
 
       - name: Upload jar to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.REPO_TOKEN }}
-          file:  ./kwsify-${{ etag }}*
-          tag: ${{ etag }}
-          release_name: ${{ etag }}-Release
+          file:  ./kwsify-${{ steps.create_tag.outputs.tag }}.jar
+          tag: ${{ steps.create_tag.outputs.tag }}
+          release_name: ${{ steps.create_tag.outputs.tag }}-Release
           overwrite: true
           file_glob: true
-          body: "Release for ref ${{ github.ref }}, tag: ${{ etag }}"
+          body: "Release for ref ${{ github.ref }}, tag: ${{ steps.create_tag.outputs.tag }}"
