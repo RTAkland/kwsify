@@ -1,6 +1,6 @@
 # kwsify
 
-<div style="text-align: center">
+<div align="center">
   <img src="https://rtakland.github.io/Static/static/kwsify.png" alt="head" width="128">
   <br>
   <em>基于websocket的实时通信服务</em>
