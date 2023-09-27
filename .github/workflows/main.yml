@@ -24,14 +24,6 @@ jobs:
         with:
           java-version: ${{ matrix.java }}
 
-      - name: Setup graalvm
-        uses: graalvm/setup-graalvm@v1
-        with:
-          java-version: '21'
-          distribution: 'graalvm'
-          github-token: ${{ secrets.repo_token }}
-          native-image-job-reports: 'true'
-          
       - name: Make Gradle wrapper executable
         if: ${{ runner.os != 'Windows' }}
         run: chmod +x ./gradlew
@@ -45,6 +37,14 @@ jobs:
           version=$(grep -oP '(?<=version = ").*(?=")' build.gradle.kts)
           git tag $version
           echo "tag=$version" >> $GITHUB_OUTPUT
+      
+      - name: Setup graalvm
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm'
+          github-token: ${{ secrets.REPO_TOKEN }}
+          native-image-job-reports: 'true'
 
       - name: Generate Native Image
         id: gen_native_image
