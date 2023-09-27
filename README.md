@@ -12,15 +12,13 @@
 
 </div>
 
-
 # 目录
 
-
 <!-- TOC -->
-* [kwsify](#kwsify)
 * [目录](#目录)
 * [使用](#使用)
-  * [Subscribe](#subscribe)
+  * [订阅](#订阅)
+  * [发布](#发布)
 * [开发](#开发)
 * [构建](#构建)
   * [Linux](#linux)
@@ -42,7 +40,7 @@ $ # 默认的监听地址为: 0.0.0.0:5050
 $ java -jar kwsify.jar [--host 0.0.0.0] [--port 6060]
 ```
 
-## Subscribe
+## 订阅
 
 > 使用Websocket连接到服务器
 
@@ -63,6 +61,8 @@ $ < {"timestamp":...,"msgType":"Notify","msgBody":"..."}
 * 如果不指定`clientId`则会自动生成一个配置文件长度的随机字符串并返回
 * 订阅者发送最少参数为 `{"action":"subscribe", "channel":"test"}`你可以在此基础添加clientId
 * 如果你忘记了随机生成的`clientId`那么你可以在`订阅者模式`将`action`设置为 `clientid` (不区分大小写)
+
+## 发布
 
 ```shell
 $ # 发布者
