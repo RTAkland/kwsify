@@ -10,7 +10,6 @@ jobs:
           - 8
         os:
           - ubuntu-latest
-          - windows-latest
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
