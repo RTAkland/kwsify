@@ -1,5 +1,3 @@
-# kwsify
-
 <div align="center">
   <img src="https://rtakland.github.io/Static/static/kwsify.png" alt="head" width="128">
   <br>
@@ -15,9 +13,12 @@
 </div>
 
 
+# 目录
+
 
 <!-- TOC -->
 * [kwsify](#kwsify)
+* [目录](#目录)
 * [使用](#使用)
   * [Subscribe](#subscribe)
 * [开发](#开发)
