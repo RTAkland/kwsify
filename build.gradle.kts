@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "cn.rtast"
-version = "0.1.0-beta"
+version = "0.1.1"
 
 repositories {
     mavenCentral()
