@@ -41,11 +41,23 @@ jobs:
         id: rename_artifact_file
         run: mv ./build/libs/*-all.jar ./kwsify-${{ steps.create_tag.outputs.tag }}.jar
 
+      - name: Setup graalvm
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm'
+          github-token: ${{ secrets.repo_token }}
+          native-image-job-reports: 'true'
+
+      - name: Generate Native Image for linux
+        id: gen_native_image
+        run: native-image -jar ./kwsify-${{ steps.create_tag.outputs.tag }}.jar
+
       - name: Upload jar to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.REPO_TOKEN }}
-          file:  ./kwsify-${{ steps.create_tag.outputs.tag }}.jar
+          file:  ./kwsify-${{ steps.create_tag.outputs.tag }}*
           tag: ${{ steps.create_tag.outputs.tag }}
           release_name: ${{ steps.create_tag.outputs.tag }}-Release
           overwrite: true
