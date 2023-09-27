@@ -20,3 +20,7 @@ const val alreadyExists = "This connection is already subscribed to this channel
 const val errorJsonSyntax = "Json syntax error, please make sure your json syntax is correct!"
 const val invalidEndpoint = "This endpoint is invalid! Valid endpoints: subscribe, publish"
 const val sentSuccessfully = "Successfully sent to the client!"
+const val addedToQueueSuccessfully = "Successfully added this connection to session queue!"
+const val successfullyUnsubscribed = "Subscription successfully canceled!"
+const val invalidSession = "This session is invalid! Please make sure this connection is subscribed!"
+const val  unknownAction = "Unknown action: "

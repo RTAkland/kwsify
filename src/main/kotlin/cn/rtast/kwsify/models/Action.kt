@@ -16,10 +16,8 @@
 
 package cn.rtast.kwsify.models
 
-import cn.rtast.kwsify.enums.ActionType
-
 data class Action(
-    val action: ActionType,
+    val action: String,
     val clientId: String?,
     val channel: String,
     val payload: String

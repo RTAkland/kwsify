@@ -16,8 +16,6 @@
 
 package cn.rtast.kwsify
 
-import cn.rtast.kwsify.endpoints.PublisherListener
-import cn.rtast.kwsify.endpoints.SubscriberListener
 import cn.rtast.kwsify.enums.ActionType
 import cn.rtast.kwsify.enums.Endpoints
 import cn.rtast.kwsify.enums.MsgType
@@ -76,7 +74,8 @@ class KwServer(address: InetSocketAddress) : WebSocketServer(address) {
             }
 
             else -> {
-                this.endpointType = Endpoints.Subscribe
+                conn.send(Reply(getTimestamp(), MsgType.Notify, invalidEndpoint).toJsonString())
+                conn.close()
             }
         }
     }
@@ -93,22 +92,42 @@ class KwServer(address: InetSocketAddress) : WebSocketServer(address) {
         try {
             val msg = message.fromJson<Action>()
             val clientId =
-                if (msg.clientId != null && msg.clientId.length >= minimumClientIdLength) msg.clientId else genRndString(
+                if (!msg.clientId.isNullOrEmpty() && msg.clientId.length >= minimumClientIdLength) msg.clientId else genRndString(
                     minimumClientIdLength
                 )
-            if (msg.action == ActionType.Subscribe) {
+            if (msg.action.lowercase() == ActionType.Subscribe.name.lowercase()) {
                 if (this.contains(conn)) {
                     conn.send(Reply(getTimestamp(), MsgType.Notify, alreadyExists + msg.channel).toJsonString())
                     return
                 }
-                SubscriberListener().onEvent(conn, clientId, msg.channel, msg.payload)
-            } else if (msg.action == ActionType.Publish) {
-                PublisherListener().onEvent(conn, clientId, msg.channel, msg.payload)
+                conn.send(
+                    Reply(
+                        getTimestamp(), MsgType.Notify, clientId
+                    ).toJsonString()
+                )
+                sessions.add(Session(msg.channel, clientId, conn))
+                conn.send(Reply(getTimestamp(), MsgType.Message, addedToQueueSuccessfully).toJsonString())
+            } else if (msg.action.lowercase() == ActionType.Publish.name.lowercase()) {
+                sessions.forEach {
+                    if (it.clientId == clientId && it.channel == msg.channel) {
+                        it.session.send(Reply(getTimestamp(), MsgType.Message, msg.payload).toJsonString())
+                        conn.send(Reply(getTimestamp(), MsgType.Notify, sentSuccessfully).toJsonString())
+                    }
+                }
+            } else if (msg.action.lowercase() == ActionType.Unsubscribe.name.lowercase()) {
+                if (this.contains(conn)) {
+                    this.removeSession(conn)
+                    conn.send(Reply(getTimestamp(), MsgType.Notify, successfullyUnsubscribed).toJsonString())
+                    return
+                }
+                conn.send(Reply(getTimestamp(), MsgType.Notify, invalidSession).toJsonString())
             } else {
-                conn.send(Reply(getTimestamp(), MsgType.Notify, invalidEndpoint).toJsonString())
-                conn.close()
+                conn.send(Reply(getTimestamp(), MsgType.Notify, unknownAction + msg.action.lowercase()).toJsonString())
             }
         } catch (_: JsonSyntaxException) {
+            conn.send(Reply(getTimestamp(), MsgType.Notify, errorJsonSyntax).toJsonString())
+        } catch (e: NullPointerException) {
+            e.printStackTrace()
             conn.send(Reply(getTimestamp(), MsgType.Notify, errorJsonSyntax).toJsonString())
         }
     }
