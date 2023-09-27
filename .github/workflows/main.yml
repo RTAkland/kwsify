@@ -14,23 +14,22 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+        
       - name: Validate gradle wrapper
         uses: gradle/wrapper-validation-action@v1
+        
       - name: Setup jdk ${{ matrix.java }}
         uses: actions/setup-java@v1
         with:
           java-version: ${{ matrix.java }}
+          
       - name: Make Gradle wrapper executable
         if: ${{ runner.os != 'Windows' }}
         run: chmod +x ./gradlew
+        
       - name: Build with shadowJar
         run: ./gradlew shadowJar
-      - name: Upload build artifacts
-        if: ${{ runner.os == 'Linux' && matrix.java == '8' }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: Kwsify
-          path: build/libs/*.jar
+        
       - name: Create Git Tag
         id: create_tag
         run: |
@@ -42,7 +41,7 @@ jobs:
         id: rename_artifact_file
         run: mv ./build/libs/*-all.jar ./kwsify-${{ steps.create_tag.outputs.tag }}.jar
 
-      - name: Upload binaries to release
+      - name: Upload jar to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.REPO_TOKEN }}
