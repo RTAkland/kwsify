@@ -39,9 +39,6 @@ class KwServer(address: InetSocketAddress) : WebSocketServer(address) {
         val minimumClientIdLength = this.conf.minClientIdLength
     }
 
-    private var endpoint = "/"
-    private var endpointType = Endpoints.Subscribe
-
     private fun contains(conn: WebSocket): Boolean {
         sessions.forEach {
             if (it.session == conn) {
@@ -52,50 +49,37 @@ class KwServer(address: InetSocketAddress) : WebSocketServer(address) {
     }
 
     private fun removeSession(session: WebSocket) {
-        sessions.forEachIndexed { index, s ->
-            if (s.session == session) {
-                sessions.removeAt(index)
-            }
+        var index = 0
+        for (i in sessions) {
+            if (i.session == session) break
+            index++
         }
+        sessions.removeAt(index)
     }
 
     override fun onOpen(conn: WebSocket, handshake: ClientHandshake) {
         println(
             "New websocket client connected: ${conn.localSocketAddress} | " + "endpoint: ${conn.resourceDescriptor}"
         )
-        this.endpoint = conn.resourceDescriptor.replace("/", "").lowercase()
-        when (this.endpoint) {
-            "subscribe" -> {
-                this.endpointType = Endpoints.Subscribe
-            }
-
-            "publish" -> {
-                this.endpointType = Endpoints.Publish
-            }
-
-            else -> {
-                conn.send(Reply(getTimestamp(), MsgType.Notify, invalidEndpoint).toJsonString())
-                conn.close()
-            }
+        if (conn.resourceDescriptor.replace("/", "") !in listOf("subscribe", "publish")) {
+            conn.send(Reply(getTimestamp(), MsgType.Notify, invalidEndpoint).toJsonString())
+            conn.close()
         }
     }
 
     override fun onClose(conn: WebSocket, code: Int, reason: String, remote: Boolean) {
-        if (this.endpointType == Endpoints.Subscribe) {
-            if (this.contains(conn)) {
-                this.removeSession(conn)
-            }
-        }
+        this.removeSession(conn)
     }
 
     override fun onMessage(conn: WebSocket, message: String) {
         try {
             val msg = message.fromJson<Action>()
+            val endpoint = conn.resourceDescriptor.replace("/", "")
             val clientId =
                 if (!msg.clientId.isNullOrEmpty() && msg.clientId.length >= minimumClientIdLength) msg.clientId else genRndString(
                     minimumClientIdLength
                 )
-            if (msg.action.lowercase() == ActionType.Subscribe.name.lowercase()) {
+            if (msg.action.lowercase() == ActionType.Subscribe.name.lowercase() && endpoint == Endpoints.Subscribe.name.lowercase()) {
                 if (this.contains(conn)) {
                     conn.send(Reply(getTimestamp(), MsgType.Notify, alreadyExists + msg.channel).toJsonString())
                     return
@@ -106,7 +90,7 @@ class KwServer(address: InetSocketAddress) : WebSocketServer(address) {
                     ).toJsonString()
                 )
                 sessions.add(Session(msg.channel, clientId, conn))
-                conn.send(Reply(getTimestamp(), MsgType.Message, addedToQueueSuccessfully).toJsonString())
+                conn.send(Reply(getTimestamp(), MsgType.Notify, addedToQueueSuccessfully).toJsonString())
             } else if (msg.action.lowercase() == ActionType.Publish.name.lowercase()) {
                 sessions.forEach {
                     if (it.clientId == clientId && it.channel == msg.channel) {
@@ -114,10 +98,22 @@ class KwServer(address: InetSocketAddress) : WebSocketServer(address) {
                         conn.send(Reply(getTimestamp(), MsgType.Notify, sentSuccessfully).toJsonString())
                     }
                 }
-            } else if (msg.action.lowercase() == ActionType.Unsubscribe.name.lowercase()) {
+            } else if (msg.action.lowercase() == ActionType.Unsubscribe.name.lowercase() && endpoint == Endpoints.Subscribe.name.lowercase()) {
                 if (this.contains(conn)) {
                     this.removeSession(conn)
                     conn.send(Reply(getTimestamp(), MsgType.Notify, successfullyUnsubscribed).toJsonString())
+                    return
+                }
+                conn.send(Reply(getTimestamp(), MsgType.Notify, invalidSession).toJsonString())
+            } else if (msg.action.lowercase() == ActionType.ClientId.name.lowercase() && endpoint == Endpoints.Subscribe.name.lowercase()) {
+                var sessionIndex = 0
+                if (this.contains(conn)) {
+                    sessions.forEachIndexed { index, session ->
+                        if (session.session == conn) {
+                            sessionIndex = index
+                        }
+                    }
+                    conn.send(Reply(getTimestamp(), MsgType.Notify, sessions[sessionIndex].clientId).toJsonString())
                     return
                 }
                 conn.send(Reply(getTimestamp(), MsgType.Notify, invalidSession).toJsonString())

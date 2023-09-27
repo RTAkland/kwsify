@@ -19,5 +19,6 @@ package cn.rtast.kwsify.enums
 enum class ActionType {
     Subscribe,
     Unsubscribe,
-    Publish
+    Publish,
+    ClientId
 }
