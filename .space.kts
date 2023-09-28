@@ -1,3 +1,10 @@
 job("Build and run tests") {
-    gradlew("amazoncorretto:17-alpine", "build")
+    container("ubuntu:latest") {
+        shellScript {
+            content = "chmod +x ./gradlew"
+        }
+        shellScript {
+            content = "./gradlew shadowJar"
+        }
+    }
 }

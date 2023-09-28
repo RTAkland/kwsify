@@ -6,8 +6,8 @@
   <img src="https://rtakland.github.io/Static/static/kotlin/made-with-kotlin.svg" alt="madeWithKotlin">
   <br>
   <img src="https://img.shields.io/github/actions/workflow/status/RTAkland/kwsify/main.yml" alt="buildState">
-  <img src="https://img.shields.io/badge/Kotlin-v1.8.22-pink?logo=Kotlin" alt="KtV">
-  <img src="https://img.shields.io/badge/LICENSE-Apache20-green?logo=apache" alt="license">
+  <img src="https://img.shields.io/badge/Kotlin-v1.9.0-pink?logo=Kotlin" alt="KtV">
+  <img src="https://img.shields.io/badge/LICENSE-Apache2.0-green?logo=apache" alt="license">
   <img src="https://img.shields.io/badge/JVM-1.8+-red?logo=Openjdk&link=https://a.com" alt="jvm">
 
 </div>
