@@ -23,7 +23,6 @@ import cn.rtast.kwsify.models.Action
 import cn.rtast.kwsify.models.Reply
 import cn.rtast.kwsify.models.Session
 import cn.rtast.kwsify.utils.*
-import com.google.gson.JsonSyntaxException
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
@@ -48,6 +47,16 @@ class KwServer(address: InetSocketAddress) : WebSocketServer(address) {
         return false
     }
 
+    private fun contains(channel: String, clientId: String): Boolean {
+        var flag = false
+        sessions.forEach {
+            if (it.channel == channel && it.clientId == clientId) {
+                flag = true
+            }
+        }
+        return flag
+    }
+
     private fun removeSession(session: WebSocket) {
         var index = 0
         for (i in sessions) {
@@ -55,6 +64,25 @@ class KwServer(address: InetSocketAddress) : WebSocketServer(address) {
             index++
         }
         sessions.removeAt(index)
+    }
+
+    private fun unsubscribe(channel: String, clientId: String) {
+        var index = 0
+        for (i in sessions) {
+            if (i.channel == channel && i.clientId == clientId) break
+            index++
+        }
+        sessions.removeAt(index)
+    }
+
+    private fun getIndex(conn: WebSocket): Int {
+        var sessionIndex = 0
+        sessions.forEachIndexed { index, session ->
+            if (session.session == conn) {
+                sessionIndex = index
+            }
+        }
+        return sessionIndex
     }
 
     override fun onOpen(conn: WebSocket, handshake: ClientHandshake) {
@@ -72,59 +100,67 @@ class KwServer(address: InetSocketAddress) : WebSocketServer(address) {
     }
 
     override fun onMessage(conn: WebSocket, message: String) {
-        try {
-            val msg = message.fromJson<Action>()
-            val endpoint = conn.resourceDescriptor.replace("/", "")
-            val clientId =
-                if (!msg.clientId.isNullOrEmpty() && msg.clientId.length >= minimumClientIdLength) msg.clientId else genRndString(
-                    minimumClientIdLength
-                )
-            if (msg.action.lowercase() == ActionType.Subscribe.name.lowercase() && endpoint == Endpoints.Subscribe.name.lowercase()) {
-                if (this.contains(conn)) {
-                    conn.send(Reply(getTimestamp(), MsgType.Notify, alreadyExists + msg.channel).toJsonString())
-                    return
-                }
+        if (message.isEmpty()) {
+            conn.send(Reply(getTimestamp(), MsgType.Notify, errorJsonSyntax).toJsonString())
+            return
+        }
+        val msg = message.fromJson<Action>()
+        val endpoint = conn.resourceDescriptor.replace("/", "")
+        var clientId: String? = null
+
+        if (msg.clientId.isNullOrEmpty() && !conf.randomClientId) {
+            conn.send(Reply(getTimestamp(), MsgType.Notify, clientInvalid).toJsonString())
+
+        } else if (msg.clientId.isNullOrEmpty() && conf.randomClientId) {
+            clientId = genRndString(minimumClientIdLength)
+        } else if (!msg.clientId.isNullOrEmpty()) {
+            if (msg.clientId.length < minimumClientIdLength) {
                 conn.send(
                     Reply(
-                        getTimestamp(), MsgType.Notify, clientId
+                        getTimestamp(),
+                        MsgType.Notify,
+                        invalidClientIdLength + minimumClientIdLength
                     ).toJsonString()
                 )
-                sessions.add(Session(msg.channel, clientId, conn))
-                conn.send(Reply(getTimestamp(), MsgType.Notify, addedToQueueSuccessfully).toJsonString())
-            } else if (msg.action.lowercase() == ActionType.Publish.name.lowercase()) {
-                sessions.forEach {
-                    if (it.clientId == clientId && it.channel == msg.channel) {
-                        it.session.send(Reply(getTimestamp(), MsgType.Message, msg.payload).toJsonString())
-                        conn.send(Reply(getTimestamp(), MsgType.Notify, sentSuccessfully).toJsonString())
-                    }
-                }
-            } else if (msg.action.lowercase() == ActionType.Unsubscribe.name.lowercase() && endpoint == Endpoints.Subscribe.name.lowercase()) {
-                if (this.contains(conn)) {
-                    this.removeSession(conn)
-                    conn.send(Reply(getTimestamp(), MsgType.Notify, successfullyUnsubscribed).toJsonString())
-                    return
-                }
-                conn.send(Reply(getTimestamp(), MsgType.Notify, invalidSession).toJsonString())
-            } else if (msg.action.lowercase() == ActionType.ClientId.name.lowercase() && endpoint == Endpoints.Subscribe.name.lowercase()) {
-                var sessionIndex = 0
-                if (this.contains(conn)) {
-                    sessions.forEachIndexed { index, session ->
-                        if (session.session == conn) {
-                            sessionIndex = index
-                        }
-                    }
-                    conn.send(Reply(getTimestamp(), MsgType.Notify, sessions[sessionIndex].clientId).toJsonString())
-                    return
-                }
-                conn.send(Reply(getTimestamp(), MsgType.Notify, invalidSession).toJsonString())
             } else {
-                conn.send(Reply(getTimestamp(), MsgType.Notify, unknownAction + msg.action.lowercase()).toJsonString())
+                clientId = msg.clientId
             }
-        } catch (_: JsonSyntaxException) {
-            conn.send(Reply(getTimestamp(), MsgType.Notify, errorJsonSyntax).toJsonString())
-        } catch (e: NullPointerException) {
-            e.printStackTrace()
-            conn.send(Reply(getTimestamp(), MsgType.Notify, errorJsonSyntax).toJsonString())
+        }
+        if (msg.action.lowercase() == ActionType.Subscribe.name.lowercase() && endpoint == Endpoints.Subscribe.name.lowercase()) {
+            if (this.contains(conn)) {
+                conn.send(Reply(getTimestamp(), MsgType.Notify, alreadyExists + msg.channel).toJsonString())
+                return
+            }
+            conn.send(
+                Reply(
+                    getTimestamp(), MsgType.Notify, clientId!!
+                ).toJsonString()
+            )
+            sessions.add(Session(msg.channel, clientId, conn))
+            conn.send(Reply(getTimestamp(), MsgType.Notify, addedToQueueSuccessfully).toJsonString())
+        } else if (msg.action.lowercase() == ActionType.Publish.name.lowercase()) {
+            sessions.forEach {
+                if (it.clientId == clientId && it.channel == msg.channel) {
+                    it.session.send(Reply(getTimestamp(), MsgType.Message, msg.payload).toJsonString())
+                    conn.send(Reply(getTimestamp(), MsgType.Notify, sentSuccessfully).toJsonString())
+                }
+            }
+        } else if (msg.action.lowercase() == ActionType.Unsubscribe.name.lowercase() && endpoint == Endpoints.Subscribe.name.lowercase()) {
+            if (this.contains(msg.channel, msg.clientId!!)) {
+                this.unsubscribe(msg.channel, msg.clientId)
+                conn.send(Reply(getTimestamp(), MsgType.Notify, successfullyUnsubscribed.replace("%", msg.clientId)).toJsonString())
+            } else {
+                conn.send(Reply(getTimestamp(), MsgType.Notify, invalidSubscribe).toJsonString())
+            }
+        } else if (msg.action.lowercase() == ActionType.ClientId.name.lowercase() && endpoint == Endpoints.Subscribe.name.lowercase()) {
+            if (this.contains(conn)) {
+                val sessionIndex = this.getIndex(conn)
+                conn.send(Reply(getTimestamp(), MsgType.Notify, sessions[sessionIndex].clientId).toJsonString())
+                return
+            }
+            conn.send(Reply(getTimestamp(), MsgType.Notify, invalidSubscribe).toJsonString())
+        } else {
+            conn.send(Reply(getTimestamp(), MsgType.Notify, unknownAction + msg.action.lowercase()).toJsonString())
         }
     }
 
