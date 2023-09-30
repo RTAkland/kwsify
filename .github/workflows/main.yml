@@ -32,7 +32,7 @@ jobs:
         
       - name: Create Git Tag
         id: create_tag
-        run: version=$(cat build.gradle | grep "version =" | sed "s/version = '\(.*\)'/\1/" | tr -d "'") && git tag $version && echo "version=$version" >> $GITHUB_OUTPUT
+        run: version=$(cat build.gradle | grep "version =" | sed "s/version = '\(.*\)'/\1/" | tr -d "'") && git tag $version && echo "tag=$version" >> $GITHUB_OUTPUT
 
 
       - name: Rename artifact file
