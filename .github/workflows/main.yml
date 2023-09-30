@@ -33,7 +33,7 @@ jobs:
       - name: Create Git Tag
         id: create_tag
         run: |
-          version=$(grep -oP '(?<=version = ").*(?=")' build.gradle.kts)
+          version=$(grep -oP '(?<=version = ").*(?=")' build.gradle)
           git tag $version
           echo "tag=$version" >> $GITHUB_OUTPUT
       
