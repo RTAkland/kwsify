@@ -69,7 +69,6 @@ $ # 发布者
 $ wscat -c ws://localhost:5050/publish
 $ > {"action":"Publish", "channel":"channel-1", "payload":"this is a test message", "clientId":"this is a client id"}
 $ < {"timestamp":...,"msgType":"Notify","msgBody":"Successfully sent to the client!"}
-$ # 如果没有用户订阅你指定的 `channel` 和 `clientId`那么服务器将不会返回任何消息
 ```
 
 > 然后就会在订阅者的消息列表中找到`this is a test message`
