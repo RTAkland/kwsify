@@ -32,24 +32,13 @@ jobs:
         
       - name: Create Git Tag
         id: create_tag
-        run: cat build.gradle | grep "version =" | tr -d " " >> $GITHUB_OUTPUT
+        run: version=$(cat build.gradle | grep "version =" | sed "s/version = '\(.*\)'/\1/" | tr -d "'") && git tag $version && echo "version=$version" >> $GITHUB_OUTPUT
 
-      - name: Setup graalvm
-        uses: graalvm/setup-graalvm@v1
-        with:
-          java-version: '21'
-          distribution: 'graalvm'
-          github-token: ${{ secrets.REPO_TOKEN }}
-          native-image-job-reports: 'true'
-        
+
       - name: Rename artifact file
         id: rename_artifact_file
         run: mv ./build/libs/*-all.jar ./kwsify-${{ steps.create_tag.outputs.tag }}.jar
 
-      - name: Generate Native Image
-        id: gen_native_image
-        run: native-image -jar ./kwsify-${{ steps.create_tag.outputs.tag }}.jar
-        
       - name: Upload jar to release
         uses: svenstaro/upload-release-action@v2
         with:
