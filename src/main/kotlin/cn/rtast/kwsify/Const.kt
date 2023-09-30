@@ -26,3 +26,4 @@ const val invalidSubscribe = "This session is invalid! Please make sure you alre
 const val unknownAction = "Unknown action: "
 const val invalidClientIdLength = "The length of your client id music more than: "
 const val clientInvalid = "This action must include clientId"
+const val noSubscriber = "No subscriber subscribed this channel or check your params."

@@ -139,6 +139,10 @@ class KwServer(address: InetSocketAddress) : WebSocketServer(address) {
             sessions.add(Session(msg.channel, clientId, conn))
             conn.send(Reply(getTimestamp(), MsgType.Notify, addedToQueueSuccessfully).toJsonString())
         } else if (msg.action.lowercase() == ActionType.Publish.name.lowercase()) {
+            if (!this.contains(conn)) {
+                conn.send(Reply(getTimestamp(), MsgType.Notify, noSubscriber).toJsonString())
+                return
+            }
             sessions.forEach {
                 if (it.clientId == clientId && it.channel == msg.channel) {
                     it.session.send(Reply(getTimestamp(), MsgType.Message, msg.payload).toJsonString())
@@ -148,7 +152,13 @@ class KwServer(address: InetSocketAddress) : WebSocketServer(address) {
         } else if (msg.action.lowercase() == ActionType.Unsubscribe.name.lowercase() && endpoint == Endpoints.Subscribe.name.lowercase()) {
             if (this.contains(msg.channel, msg.clientId!!)) {
                 this.unsubscribe(msg.channel, msg.clientId)
-                conn.send(Reply(getTimestamp(), MsgType.Notify, successfullyUnsubscribed.replace("%", msg.clientId)).toJsonString())
+                conn.send(
+                    Reply(
+                        getTimestamp(),
+                        MsgType.Notify,
+                        successfullyUnsubscribed.replace("%", msg.clientId)
+                    ).toJsonString()
+                )
             } else {
                 conn.send(Reply(getTimestamp(), MsgType.Notify, invalidSubscribe).toJsonString())
             }
