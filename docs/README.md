@@ -14,7 +14,7 @@
 
 # 项目命名的由来
 
-> 在GitHub上看大到了一个叫[wsify](https://github.com/alash3al/wsify)
+> 在GitHub上看到了一个叫[wsify](https://github.com/alash3al/wsify)
 > 的项目也是用ws来实现实时通信, 但是是用[go](https://go.dev/)
 > 写的, 我就想用 [kotlin](https://kotl.in)来实现顺便练一下手
 
