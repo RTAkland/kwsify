@@ -23,6 +23,6 @@ application {
     mainClass = "cn.rtast.kwsify.KwsifyKt"
 }
 
-tasks.shadowJar {
-    dependsOn(tasks.build)
+tasks.build {
+    dependsOn(tasks.shadowJar)
 }
