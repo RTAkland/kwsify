@@ -1,10 +1,12 @@
 plugins {
-    kotlin("jvm") version "2.0.21"
-    id("com.gradleup.shadow") version "8.3.0"
-    application
+    alias(libs.plugins.kotlin)
+    alias(libs.plugins.shadow)
+    id("application")
+    id("maven-publish")
 }
 
 val appVersion: String by project
+val libVersion: String by project
 
 group = "cn.rtast"
 version = appVersion
@@ -14,15 +16,52 @@ repositories {
 }
 
 dependencies {
-    implementation("com.google.code.gson:gson:2.11.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-cli-jvm:0.3.6")
-    implementation("org.java-websocket:Java-WebSocket:1.5.7")
+    implementation(libs.gson)
+    implementation(libs.kotlinx.cli)
+    implementation(libs.java.websocket)
 }
 
 application {
     mainClass = "cn.rtast.kwsify.KwsifyKt"
 }
 
-tasks.build {
-    dependsOn(tasks.shadowJar)
+allprojects {
+    apply {
+        apply(plugin = "org.jetbrains.kotlin.jvm")
+        apply(plugin = "maven-publish")
+    }
+
+    repositories {
+        mavenCentral()
+    }
+
+    val sourceJar by tasks.registering(Jar::class) {
+        archiveClassifier.set("sources")
+        from(sourceSets.main.get().allSource)
+    }
+
+    artifacts {
+        archives(sourceJar)
+    }
+
+    publishing {
+        publications {
+            create<MavenPublication>("mavenJava") {
+                from(components["java"])
+                artifact(sourceJar)
+                artifactId = project.name
+                version = libVersion
+            }
+        }
+
+        repositories {
+            maven {
+                url = uri("https://repo.rtast.cn/api/v4/projects/49/packages/maven")
+                credentials {
+                    username = "RTAkland"
+                    password = System.getenv("GITLAB_TOKEN")
+                }
+            }
+        }
+    }
 }

@@ -1,0 +1,17 @@
+[versions]
+kotlinVersion = "2.0.21"
+gsonVersion = "2.11.0"
+javaWebsocketVersion = "1.5.7"
+kotlinx-cli = "0.3.6"
+shadow = "8.3.0"
+
+[libraries]
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gsonVersion" }
+java-websocket = { group = "org.java-websocket", name = "Java-WebSocket", version.ref = "javaWebsocketVersion" }
+kotlinx-cli = { group = "org.jetbrains.kotlinx", name = "kotlinx-cli-jvm", version.ref = "kotlinx-cli" }
+
+[bundles]
+
+[plugins]
+kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlinVersion" }
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
