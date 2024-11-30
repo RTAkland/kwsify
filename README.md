@@ -18,6 +18,7 @@
 * [目录](#目录)
 * [使用](#使用)
   * [服务端](#服务端)
+    * [构建](#构建)
   * [SDK](#sdk)
     * [添加Maven仓库](#添加maven仓库)
     * [添加依赖](#添加依赖)
@@ -30,6 +31,13 @@
 # 使用
 
 ## 服务端
+
+### 构建
+
+```shell
+$ chmod +x ./gradlew  # 可选
+$ ./gradlew shadowJar
+```
 
 ```shell
 $ java -jar kwsify.jar [--port 8989]
