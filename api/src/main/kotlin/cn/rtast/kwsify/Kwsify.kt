@@ -10,34 +10,31 @@ package cn.rtast.kwsify
 import cn.rtast.kwsify.entity.Packet
 import cn.rtast.kwsify.enums.OPCode
 import cn.rtast.kwsify.util.fromJson
+import cn.rtast.kwsify.util.send
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
 import java.net.URI
 
-class Kwsify(private val address: String, private val channel: String) : IOperation {
-
-    init {
-        this.connect()
-    }
-
+class Kwsify(private val address: String) : IOperation {
     private lateinit var websocket: WebSocketClient
     private val subscribers = mutableMapOf<String, MutableList<Subscriber>>()
 
-    override fun connect() {
+    override fun connect(channel: String, broadcastSelf: Boolean) {
         websocket = object : WebSocketClient(URI(address)) {
             override fun onOpen(handshakedata: ServerHandshake) {
-                subscribePacket()
+                subscribePacket(channel, broadcastSelf)
             }
 
             override fun onMessage(message: String) {
                 val inboundPacket = message.fromJson<Packet>()
                 val channel = inboundPacket.channel!!
                 subscribers[channel]?.forEach { subscriber ->
-                    subscriber.onMessage(channel, inboundPacket.body)
+                    subscriber.onMessage(channel, inboundPacket.body, inboundPacket)
                 }
             }
 
             override fun onClose(code: Int, reason: String?, remote: Boolean) {
+                unsubscribe(channel)
             }
 
             override fun onError(ex: Exception) {
@@ -46,7 +43,7 @@ class Kwsify(private val address: String, private val channel: String) : IOperat
         }.apply { connect() }
     }
 
-    override fun publish(payload: String): Boolean {
+    override fun publish(channel: String, payload: String): Boolean {
         val packet = Packet(OPCode.PUBLISH, payload, channel)
         subscribers[channel]?.forEach { subscriber ->
             websocket.send(packet)
@@ -54,7 +51,8 @@ class Kwsify(private val address: String, private val channel: String) : IOperat
         return true
     }
 
-    override fun subscribe(subscriber: Subscriber): Boolean {
+    override fun subscribe(channel: String, broadcastSelf: Boolean, subscriber: Subscriber): Boolean {
+        this.connect(channel, broadcastSelf)
         if (!subscribers.containsKey(channel)) {
             subscribers[channel] = mutableListOf()
         }
@@ -62,21 +60,27 @@ class Kwsify(private val address: String, private val channel: String) : IOperat
         return true
     }
 
-    override fun unsubscribe(): Boolean {
-        if (subscribers.containsKey(channel)) {
-            subscribers.remove(channel)
-            unsubscribePacket()
-            return true
+    override fun unsubscribe(channel: String): Boolean {
+        try {
+
+            if (subscribers.containsKey(channel)) {
+                subscribers.remove(channel)
+                unsubscribePacket(channel)
+                return true
+            }
+            return false
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return false
         }
-        return false
     }
 
-    override fun subscribePacket() {
-        val packet = Packet(OPCode.JOIN, "_subscribe", channel)
+    override fun subscribePacket(channel: String, broadcastSelf: Boolean) {
+        val packet = Packet(OPCode.JOIN, "_subscribe", channel, broadcastSelf)
         websocket.send(packet)
     }
 
-    override fun unsubscribePacket() {
+    override fun unsubscribePacket(channel: String) {
         val packet = Packet(OPCode.EXIT_CHANNEL, "_unsubscribe", channel)
         websocket.send(packet)
     }

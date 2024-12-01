@@ -12,30 +12,30 @@ interface IOperation {
     /**
      * 连接Websocket
      */
-    fun connect()
+    fun connect(channel: String, broadcastSelf: Boolean)
 
     /**
      * 发布消息
      */
-    fun publish(payload: String): Boolean
+    fun publish(channel: String, payload: String): Boolean
 
     /**
      * 订阅频道消息
      */
-    fun subscribe(subscriber: Subscriber): Boolean
+    fun subscribe(channel: String, broadcastSelf: Boolean, subscriber: Subscriber): Boolean
 
     /**
      * 取消订阅频道消息
      */
-    fun unsubscribe(): Boolean
+    fun unsubscribe(channel: String): Boolean
 
     /**
      * 发送订阅频道的数据包
      */
-    fun subscribePacket()
+    fun subscribePacket(channel: String, broadcastSelf: Boolean)
 
     /**
      * 发送取消订阅频道的数据包
      */
-    fun unsubscribePacket()
+    fun unsubscribePacket(channel: String)
 }

@@ -58,7 +58,7 @@ repositories {
 
 ```kotlin
 dependencies {
-    implementation("cn.rtast.kwsify:api:${version}")  // 替换成最新版本
+    implementation("cn.rtast.kwsify:api:1.0.0")  // 替换成最新版本
 }
 ```
 
@@ -69,8 +69,9 @@ dependencies {
 ```kotlin
 fun main() {
     val wsify = Kwsify("ws://127.0.0.1:8989", "test")
-    wsify.subscribe(object : Subscriber {
-        override fun onMessage(channel: String, payload: String) {
+    // testChannel为需要订阅的频道, false表示是否接收自己publish的消息
+    wsify.subscribe("testChannel", false, object : Subscriber {
+        override fun onMessage(channel: String, payload: String, packet: Packet) {
             println(payload)
         }
     })

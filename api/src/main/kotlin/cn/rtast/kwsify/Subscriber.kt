@@ -7,9 +7,11 @@
 
 package cn.rtast.kwsify
 
+import cn.rtast.kwsify.entity.Packet
+
 interface Subscriber {
     /**
      * 接收到消息时
      */
-    fun onMessage(channel: String, payload: String)
+    fun onMessage(channel: String, payload: String, packet: Packet)
 }

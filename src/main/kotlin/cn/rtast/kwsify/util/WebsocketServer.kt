@@ -16,15 +16,28 @@ import java.net.InetSocketAddress
 
 class WebsocketServer(private val port: Int) : WebSocketServer(InetSocketAddress(port)) {
 
-    private val connectionState = mutableMapOf<WebSocket, String>()
+    private val connectionState = mutableMapOf<WebSocket, Map<String, Boolean>>()
+
+    private fun getSender(conn: WebSocket): Packet.Sender {
+        val address = conn.remoteSocketAddress.address.toString()
+        val hostName = conn.remoteSocketAddress.hostName
+        val port = conn.remoteSocketAddress.port
+        return Packet.Sender(hostName, port, address)
+    }
 
     private fun nullChannelPacket(conn: WebSocket) {
-        val nullChannelPacket = Packet(OPCode.SYSTEM, "channel must not be null!", "_system").toJson()
+        val nullChannelPacket =
+            Packet(OPCode.SYSTEM, "channel must not be null!", "_system", sender = this.getSender(conn))
         conn.send(nullChannelPacket)
     }
 
     override fun onOpen(conn: WebSocket, handshake: ClientHandshake) {
-        val welcomePacket = Packet(OPCode.SYSTEM, "send OPCode=3, set channel to join channel", "_system").toJson()
+        val welcomePacket = Packet(
+            OPCode.SYSTEM,
+            "send OPCode=3, set channel to join channel",
+            "_system",
+            sender = this.getSender(conn)
+        )
         conn.send(welcomePacket)
     }
 
@@ -35,15 +48,21 @@ class WebsocketServer(private val port: Int) : WebSocketServer(InetSocketAddress
     override fun onMessage(conn: WebSocket, message: String) {
         try {
             val packet = message.fromJson<Packet>()
+            val broadcastSelf = packet.broadcastSelf == true
             val channel = packet.channel
             when (packet.op) {
                 OPCode.JOIN -> {
                     if (channel == null) nullChannelPacket(conn) else {
                         if (!connectionState.containsKey(conn)) {
-                            connectionState[conn] = channel
+                            connectionState[conn] = mapOf(channel to broadcastSelf)
                         } else {
                             val systemPacket =
-                                Packet(OPCode.SYSTEM, "You already joined the channel ($channel)", "_system").toJson()
+                                Packet(
+                                    OPCode.SYSTEM,
+                                    "You already joined the channel ($channel)",
+                                    "_system",
+                                    sender = this.getSender(conn)
+                                )
                             conn.send(systemPacket)
                         }
                     }
@@ -56,9 +75,19 @@ class WebsocketServer(private val port: Int) : WebSocketServer(InetSocketAddress
                 }
 
                 OPCode.PUBLISH -> {
-                    connectionState.filterKeys { it != conn }.filter { it.value == channel }.forEach {
-                        val publishMessagePacket = Packet(OPCode.MESSAGE, packet.body, channel).toJson()
-                        it.key.send(publishMessagePacket)
+                    connectionState.forEach { (webSocket, channelMap) ->
+                        channelMap.forEach { (channelKey, shouldBroadcast) ->
+                            if (channelKey == channel) {
+                                if (shouldBroadcast || webSocket != conn) {
+                                    val publishMessagePacket =
+                                        Packet(
+                                            OPCode.MESSAGE, packet.body, channel,
+                                            sender = this.getSender(conn)
+                                        )
+                                    webSocket.send(publishMessagePacket)
+                                }
+                            }
+                        }
                     }
                 }
 
