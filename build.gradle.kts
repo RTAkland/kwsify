@@ -30,13 +30,24 @@ application {
 tasks.shadowJar {
     enabled = false
 }
-
 tasks.register<ShadowJar>("buildShadowJar") {
     group = "build"
     description = "Manually build the shadow JAR file"
     archiveClassifier.set("all")
     from(sourceSets.main.get().output)
     configurations = listOf(project.configurations.runtimeClasspath.get())
+}
+
+tasks.named("shadowDistZip") {
+    dependsOn("buildShadowJar")
+}
+
+tasks.named("shadowDistTar") {
+    dependsOn("buildShadowJar")
+}
+
+tasks.named("startShadowScripts") {
+    dependsOn("buildShadowJar")
 }
 
 allprojects {
