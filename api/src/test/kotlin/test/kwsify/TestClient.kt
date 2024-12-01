@@ -19,6 +19,11 @@ fun main() {
             Thread.sleep(500L)
             wsify.publish("test", "114514")
         }
+
+        override fun onClosed(channel: String) {
+            println("closed")
+            wsify.reconnect()
+        }
     })
     Thread.sleep(1000L)
     wsify.publish("test", "114514")

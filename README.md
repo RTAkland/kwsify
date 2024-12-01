@@ -57,29 +57,31 @@ repositories {
 
 ```kotlin
 dependencies {
-    implementation("cn.rtast.kwsify:api:1.0.0")  // 替换成最新版本
+    implementation("cn.rtast.kwsify:api:1.1.1")  // 替换成最新版本
 }
 ```
 
-> 点[这里](https://repo.rtast.cn/RTAkland/kwsify/-/packages)查看所有版本
+> 点[这里](https://repo.rtast.cn/RTAkland/kwsify/-/packages)查看所有版本(记得使用`api`模块而不是`kwsify`模块)
 
 ### 开始使用
 
 ```kotlin
 fun main() {
-    val wsify = Kwsify("ws://127.0.0.1:8989", "test")
-    // testChannel为需要订阅的频道, false表示是否接收自己publish的消息
-    wsify.subscribe("testChannel", false, object : Subscriber {
-        override fun onMessage(channel: String, payload: String, packet: Packet) {
-            println(payload)
+    val wsify = Kwsify("ws://127.0.0.1:8080")
+    wsify.subscribe("test", true, object : Subscriber {
+        override fun onMessage(channel: String, payload: String, packet: OutboundMessagePacket) {
+            println(packet.body)
+            Thread.sleep(500L)
+            wsify.publish("test", "114514")
+        }
+
+        override fun onClosed(channel: String) {
+            println("closed")
+            wsify.reconnect()
         }
     })
-    Thread.sleep(2000)
-    while (true) {
-        wsify.publish("test")
-        Thread.sleep(1000)
-    }
-    wsify.unsubscribe()
+    Thread.sleep(1000L)
+    wsify.publish("test", "114514")
 }
 ```
 

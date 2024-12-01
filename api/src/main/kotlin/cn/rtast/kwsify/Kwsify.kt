@@ -18,31 +18,15 @@ import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
 import java.net.URI
 import java.util.*
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 
 class Kwsify(private val address: String) : IOperation {
     private lateinit var websocket: WebSocketClient
     private val subscribers = mutableMapOf<String, MutableList<Subscriber>>()
-    private val executor = Executors.newScheduledThreadPool(1)
     private val reconnectInterval = 5L
-    private var isConnected = false
-
-    private fun startReconnect() {
-        executor.schedule({
-            try {
-                println("Reconnecting...")
-                websocket.reconnect()
-            } catch (_: InterruptedException) {
-                Thread.currentThread().interrupt()
-            }
-        }, reconnectInterval, TimeUnit.SECONDS)
-    }
 
     override fun connect(channel: String, broadcastSelf: Boolean) {
         websocket = object : WebSocketClient(URI(address)) {
             override fun onOpen(handshakedata: ServerHandshake) {
-                this@Kwsify.isConnected = true
                 val authPacket = SubscribePacket(OPCode.JOIN, UUID.randomUUID(), channel, broadcastSelf)
                 websocket.send(authPacket)
             }
@@ -56,14 +40,19 @@ class Kwsify(private val address: String) : IOperation {
             }
 
             override fun onClose(code: Int, reason: String?, remote: Boolean) {
-                this@Kwsify.isConnected = false
-                startReconnect()
+                subscribers[channel]?.forEach { subscriber ->
+                    subscriber.onClosed(channel)
+                }
             }
 
             override fun onError(ex: Exception) {
                 ex.printStackTrace()
             }
         }.apply { connect() }
+    }
+
+    override fun reconnect() {
+        websocket.reconnect()
     }
 
     override fun publish(channel: String, payload: String): Boolean {

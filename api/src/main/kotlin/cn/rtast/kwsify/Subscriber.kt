@@ -14,4 +14,9 @@ interface Subscriber {
      * 接收到消息时
      */
     fun onMessage(channel: String, payload: String, packet: OutboundMessagePacket)
+
+    /**
+     * websocket连接断开时
+     */
+    fun onClosed(channel: String)
 }

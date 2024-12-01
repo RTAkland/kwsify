@@ -15,6 +15,11 @@ interface IOperation {
     fun connect(channel: String, broadcastSelf: Boolean)
 
     /**
+     * 重连Websocket服务器
+     */
+    fun reconnect()
+
+    /**
      * 发布消息
      */
     fun publish(channel: String, payload: String): Boolean
