@@ -1,3 +1,5 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 plugins {
     alias(libs.plugins.kotlin)
     alias(libs.plugins.shadow)
@@ -23,6 +25,18 @@ dependencies {
 
 application {
     mainClass = "cn.rtast.kwsify.KwsifyKt"
+}
+
+tasks.shadowJar {
+    enabled = false
+}
+
+tasks.register<ShadowJar>("buildShadowJar") {
+    group = "build"
+    description = "Manually build the shadow JAR file"
+    archiveClassifier.set("all")
+    from(sourceSets.main.get().output)
+    configurations = listOf(project.configurations.runtimeClasspath.get())
 }
 
 allprojects {

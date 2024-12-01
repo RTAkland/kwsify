@@ -36,7 +36,7 @@
 
 ```shell
 $ chmod +x ./gradlew  # 可选
-$ ./gradlew shadowJar
+$ ./gradlew buildShadowJar
 ```
 
 ```shell

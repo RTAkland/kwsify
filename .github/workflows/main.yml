@@ -24,4 +24,9 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
       - name: Build
-        run: ./gradlew build
+        run: ./gradlew build buildShadowJar
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: Kwsify-executable
+          path: build/libs/*-all.jar
