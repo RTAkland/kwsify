@@ -4,6 +4,7 @@
  * Date: 2024/11/30
  */
 
+@file:Suppress("unused")
 
 package cn.rtast.kwsify.util
 

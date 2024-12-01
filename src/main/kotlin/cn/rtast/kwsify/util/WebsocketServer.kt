@@ -7,7 +7,9 @@
 
 package cn.rtast.kwsify.util
 
-import cn.rtast.kwsify.entity.Packet
+import cn.rtast.kwsify.entity.ConnectionState
+import cn.rtast.kwsify.entity.OutboundMessagePacket
+import cn.rtast.kwsify.entity.SubscribePacket
 import cn.rtast.kwsify.enums.OPCode
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
@@ -16,56 +18,60 @@ import java.net.InetSocketAddress
 
 class WebsocketServer(private val port: Int) : WebSocketServer(InetSocketAddress(port)) {
 
-    private val connectionState = mutableMapOf<WebSocket, Map<String, Boolean>>()
+    private val connectionState = mutableListOf<ConnectionState>()
 
-    private fun getSender(conn: WebSocket): Packet.Sender {
-        val address = conn.remoteSocketAddress.address.toString()
-        val hostName = conn.remoteSocketAddress.hostName
-        val port = conn.remoteSocketAddress.port
-        return Packet.Sender(hostName, port, address)
+    private fun getSender(conn: WebSocket): OutboundMessagePacket.Sender {
+        val state = connectionState.find { it.websocket == conn }!!
+        val address = state.websocket.remoteSocketAddress.address.toString()
+        val hostName = state.websocket.remoteSocketAddress.hostName
+        val port = state.websocket.remoteSocketAddress.port
+        return OutboundMessagePacket.Sender(hostName, port, address, state.uuid)
     }
 
     private fun nullChannelPacket(conn: WebSocket) {
         val nullChannelPacket =
-            Packet(OPCode.SYSTEM, "channel must not be null!", "_system", sender = this.getSender(conn))
+            OutboundMessagePacket(OPCode.SYSTEM, "channel must not be null!", "_system", sender = this.getSender(conn))
         conn.send(nullChannelPacket)
     }
 
     override fun onOpen(conn: WebSocket, handshake: ClientHandshake) {
-        val welcomePacket = Packet(
+        val welcomePacket = OutboundMessagePacket(
             OPCode.SYSTEM,
-            "send OPCode=3, set channel to join channel",
+            "send `op=3`, fill channel filed and uuid filed to join channel",
             "_system",
-            sender = this.getSender(conn)
+            null
         )
         conn.send(welcomePacket)
+        println("New connection connected(${conn.remoteSocketAddress})(Unauthenticated)")
     }
 
     override fun onClose(conn: WebSocket, code: Int, reason: String, remote: Boolean) {
-        connectionState.remove(conn)
+        connectionState.removeIf { it.websocket == conn }
+        println("Connection closed(${conn.remoteSocketAddress}, $code, $reason)")
     }
 
     override fun onMessage(conn: WebSocket, message: String) {
         try {
-            val packet = message.fromJson<Packet>()
-            val broadcastSelf = packet.broadcastSelf == true
+            val packet = message.fromJson<OutboundMessagePacket>()
             val channel = packet.channel
             when (packet.op) {
                 OPCode.JOIN -> {
-                    if (channel == null) nullChannelPacket(conn) else {
-                        if (!connectionState.containsKey(conn)) {
-                            connectionState[conn] = mapOf(channel to broadcastSelf)
-                        } else {
-                            val systemPacket =
-                                Packet(
-                                    OPCode.SYSTEM,
-                                    "You already joined the channel ($channel)",
-                                    "_system",
-                                    sender = this.getSender(conn)
-                                )
-                            conn.send(systemPacket)
-                        }
+                    val authPacket = message.fromJson<SubscribePacket>()
+                    if (!connectionState.any { it.websocket == conn }) {
+                        connectionState.add(
+                            ConnectionState(authPacket.channel, conn, authPacket.broadcastSelf, authPacket.uuid)
+                        )
+                    } else {
+                        val systemPacket =
+                            OutboundMessagePacket(
+                                OPCode.SYSTEM,
+                                "You already joined the channel ($channel)",
+                                "_system",
+                                sender = this.getSender(conn)
+                            )
+                        conn.send(systemPacket)
                     }
+                    println("New authed connection joined the channel(${authPacket.channel}) with UUID(${authPacket.uuid})")
                 }
 
                 OPCode.SYSTEM -> {
@@ -75,30 +81,30 @@ class WebsocketServer(private val port: Int) : WebSocketServer(InetSocketAddress
                 }
 
                 OPCode.PUBLISH -> {
-                    connectionState.forEach { (webSocket, channelMap) ->
-                        channelMap.forEach { (channelKey, shouldBroadcast) ->
-                            if (channelKey == channel) {
-                                if (shouldBroadcast || webSocket != conn) {
-                                    val publishMessagePacket =
-                                        Packet(
-                                            OPCode.MESSAGE, packet.body, channel,
-                                            sender = this.getSender(conn)
-                                        )
-                                    webSocket.send(publishMessagePacket)
-                                }
+                    connectionState.forEach {
+                        if (it.websocket != conn || it.broadcastSelf) {
+                            if (it.channel == channel) {
+                                val publishMessagePacket =
+                                    OutboundMessagePacket(
+                                        OPCode.MESSAGE, packet.body, channel,
+                                        sender = this.getSender(conn)
+                                    )
+                                it.websocket.send(publishMessagePacket)
                             }
                         }
                     }
                 }
 
                 OPCode.EXIT_CHANNEL -> {
-                    if (channel == null) nullChannelPacket(conn)
-                    else if (connectionState.containsKey(conn)) connectionState.remove(conn)
+                    if (connectionState.any { it.websocket == conn })
+                        connectionState.removeIf { it.websocket == conn }
                     else nullChannelPacket(conn)
                 }
             }
         } catch (e: Exception) {
             e.printStackTrace()
+            val outboundPacket = OutboundMessagePacket(OPCode.SYSTEM, e.message.toString(), "_system", null)
+            conn.send(outboundPacket)
         }
     }
 

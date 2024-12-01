@@ -7,16 +7,18 @@
 
 package cn.rtast.kwsify.entity
 
-data class Packet(
+import java.util.UUID
+
+data class OutboundMessagePacket(
     val op: Int,
     val body: String,
-    val channel: String?,
-    val broadcastSelf: Boolean? = null,
-    val sender: Sender? = null
+    val channel: String,
+    val sender: Sender?
 ) {
     data class Sender(
         val host: String,
         val port: Int,
-        val address: String
+        val address: String,
+        val uuid: UUID
     )
 }

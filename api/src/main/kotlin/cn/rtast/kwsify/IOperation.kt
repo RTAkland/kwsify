@@ -28,14 +28,4 @@ interface IOperation {
      * 取消订阅频道消息
      */
     fun unsubscribe(channel: String): Boolean
-
-    /**
-     * 发送订阅频道的数据包
-     */
-    fun subscribePacket(channel: String, broadcastSelf: Boolean)
-
-    /**
-     * 发送取消订阅频道的数据包
-     */
-    fun unsubscribePacket(channel: String)
 }
