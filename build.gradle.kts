@@ -24,7 +24,7 @@ dependencies {
 }
 
 application {
-    mainClass = "cn.rtast.kwsify.KwsifyKt"
+    mainClass = "cn.rtast.kwsify.MainKt"
 }
 
 tasks.shadowJar {
@@ -36,6 +36,9 @@ tasks.register<ShadowJar>("buildShadowJar") {
     archiveClassifier.set("all")
     from(sourceSets.main.get().output)
     configurations = listOf(project.configurations.runtimeClasspath.get())
+    manifest {
+        attributes(mapOf("Main-Class" to application.mainClass))
+    }
 }
 
 tasks.named("shadowDistZip") {
