@@ -51,7 +51,7 @@ dependencies {
 }
 ```
 
-> 点[这里](https://pkg.rtast.cn/#/releases/cn/rtast/kwsify-api)查看所有版本(记得使用`api`模块而不是`kwsify`模块)
+> 点[这里](https://pkg.rtast.cn/#/releases/cn/rtast/kwsify-api)查看所有版本(记得使用`api`模块而不是`server`模块)
 
 ### 开始使用
 
