@@ -7,13 +7,13 @@
 
 package cn.rtast.kwsify
 
-import cn.rtast.kwsify.entity.OutboundMessagePacket
+import cn.rtast.kwsify.entity.OutboundMessageBytesPacket
 
 interface Subscriber {
     /**
-     * 接收到消息时
+     * 接收到二进制消息时
      */
-    fun onMessage(channel: String, payload: String, packet: OutboundMessagePacket)
+    fun onMessage(channel: String, payload: ByteArray, packet: OutboundMessageBytesPacket) {}
 
     /**
      * websocket连接断开时

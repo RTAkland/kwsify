@@ -25,6 +25,11 @@ interface IOperation {
     fun publish(channel: String, payload: String): Boolean
 
     /**
+     * 发布二进制消息
+     */
+    fun publish(channel: String, payload: ByteArray): Boolean
+
+    /**
      * 订阅频道消息
      */
     fun subscribe(channel: String, broadcastSelf: Boolean, subscriber: Subscriber): Boolean

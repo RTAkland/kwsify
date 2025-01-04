@@ -8,39 +8,51 @@
 package cn.rtast.kwsify.util
 
 import cn.rtast.kwsify.entity.ConnectionState
-import cn.rtast.kwsify.entity.OutboundMessagePacket
+import cn.rtast.kwsify.entity.OPCodePacket
+import cn.rtast.kwsify.entity.OutboundMessageBytesPacket
+import cn.rtast.kwsify.entity.PublishPacket
 import cn.rtast.kwsify.entity.SubscribePacket
 import cn.rtast.kwsify.enums.OPCode
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
 import java.net.InetSocketAddress
+import java.nio.ByteBuffer
+import java.util.*
 
 class WebsocketServer(private val port: Int) : WebSocketServer(InetSocketAddress(port)) {
 
     private val connectionState = mutableListOf<ConnectionState>()
 
-    private fun getSender(conn: WebSocket): OutboundMessagePacket.Sender {
+    private fun getSender(conn: WebSocket): OutboundMessageBytesPacket.Sender {
         val state = connectionState.find { it.websocket == conn }!!
         val address = state.websocket.remoteSocketAddress.address.toString()
         val hostName = state.websocket.remoteSocketAddress.hostName
         val port = state.websocket.remoteSocketAddress.port
-        return OutboundMessagePacket.Sender(hostName, port, address, state.uuid)
+        return OutboundMessageBytesPacket.Sender(hostName, port, address, state.uuid)
+    }
+
+    private fun getSystemSender(): OutboundMessageBytesPacket.Sender {
+        return OutboundMessageBytesPacket.Sender("system", 0, "system", UUID.randomUUID())
     }
 
     private fun nullChannelPacket(conn: WebSocket) {
         val nullChannelPacket =
-            OutboundMessagePacket(OPCode.SYSTEM, "channel must not be null!", "_system", sender = this.getSender(conn))
+            OutboundMessageBytesPacket(
+                OPCode.SYSTEM,
+                "channel must not be null!".toByteArray(),
+                "_system",
+                sender = this.getSender(conn)
+            ).toByteArray()
         conn.send(nullChannelPacket)
     }
 
     override fun onOpen(conn: WebSocket, handshake: ClientHandshake) {
-        val welcomePacket = OutboundMessagePacket(
+        val welcomePacket = OutboundMessageBytesPacket(
             OPCode.SYSTEM,
-            "send `op=3`, fill channel filed and uuid filed to join channel",
-            "_system",
-            null
-        )
+            "send `op=3`, fill channel filed and uuid filed to join channel".toByteArray(),
+            "_system", getSystemSender()
+        ).toByteArray()
         conn.send(welcomePacket)
         println("New connection connected(${conn.remoteSocketAddress})(Unauthenticated)")
     }
@@ -51,24 +63,27 @@ class WebsocketServer(private val port: Int) : WebSocketServer(InetSocketAddress
     }
 
     override fun onMessage(conn: WebSocket, message: String) {
+    }
+
+    override fun onMessage(conn: WebSocket, message: ByteBuffer) {
         try {
-            val packet = message.fromJson<OutboundMessagePacket>()
+            val packet = OPCodePacket.fromByteArray(message.duplicate())
             val channel = packet.channel
             when (packet.op) {
                 OPCode.JOIN -> {
-                    val authPacket = message.fromJson<SubscribePacket>()
+                    val authPacket = SubscribePacket.fromByteArray(message.duplicate())
                     if (!connectionState.any { it.websocket == conn }) {
                         connectionState.add(
                             ConnectionState(authPacket.channel, conn, authPacket.broadcastSelf, authPacket.uuid)
                         )
                     } else {
                         val systemPacket =
-                            OutboundMessagePacket(
+                            OutboundMessageBytesPacket(
                                 OPCode.SYSTEM,
-                                "You already joined the channel ($channel)",
+                                "You already joined the channel ($channel)".toByteArray(),
                                 "_system",
                                 sender = this.getSender(conn)
-                            )
+                            ).toByteArray()
                         conn.send(systemPacket)
                     }
                     println("New authed connection joined the channel(${authPacket.channel}) with UUID(${authPacket.uuid})")
@@ -81,14 +96,15 @@ class WebsocketServer(private val port: Int) : WebSocketServer(InetSocketAddress
                 }
 
                 OPCode.PUBLISH -> {
+                    val packet = PublishPacket.fromByteArray(message.duplicate())
                     connectionState.forEach {
                         if (it.websocket != conn || it.broadcastSelf) {
                             if (it.channel == channel) {
                                 val publishMessagePacket =
-                                    OutboundMessagePacket(
+                                    OutboundMessageBytesPacket(
                                         OPCode.MESSAGE, packet.body, channel,
                                         sender = this.getSender(conn)
-                                    )
+                                    ).toByteArray()
                                 it.websocket.send(publishMessagePacket)
                             }
                         }
@@ -96,14 +112,22 @@ class WebsocketServer(private val port: Int) : WebSocketServer(InetSocketAddress
                 }
 
                 OPCode.EXIT_CHANNEL -> {
+                    val connection = connectionState.find { it.websocket == conn }!!
                     if (connectionState.any { it.websocket == conn })
                         connectionState.removeIf { it.websocket == conn }
                     else nullChannelPacket(conn)
+                    println("Connection unsubscribed(${conn.remoteSocketAddress}, ${connection.uuid}: ${connection.channel})")
                 }
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            val outboundPacket = OutboundMessagePacket(OPCode.SYSTEM, e.message.toString(), "_system", null)
+            val outboundPacket =
+                OutboundMessageBytesPacket(
+                    OPCode.SYSTEM,
+                    e.message.toString().toByteArray(),
+                    "_system",
+                    getSystemSender()
+                ).toByteArray()
             conn.send(outboundPacket)
         }
     }

@@ -7,35 +7,34 @@
 
 package cn.rtast.kwsify
 
-import cn.rtast.kwsify.entity.OutboundMessagePacket
-import cn.rtast.kwsify.entity.PublishPacket
-import cn.rtast.kwsify.entity.SubscribePacket
-import cn.rtast.kwsify.entity.UnsubscribePacket
+import cn.rtast.kwsify.entity.*
 import cn.rtast.kwsify.enums.OPCode
-import cn.rtast.kwsify.util.fromJson
-import cn.rtast.kwsify.util.send
+import cn.rtast.kwsify.util.toJson
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
 import java.net.URI
+import java.nio.ByteBuffer
 import java.util.*
 
 class Kwsify(private val address: String) : IOperation {
     private lateinit var websocket: WebSocketClient
     private val subscribers = mutableMapOf<String, MutableList<Subscriber>>()
-    private val reconnectInterval = 5L
 
     override fun connect(channel: String, broadcastSelf: Boolean) {
         websocket = object : WebSocketClient(URI(address)) {
             override fun onOpen(handshakedata: ServerHandshake) {
-                val authPacket = SubscribePacket(OPCode.JOIN, UUID.randomUUID(), channel, broadcastSelf)
+                val authPacket = SubscribePacket(OPCode.JOIN, UUID.randomUUID(), channel, broadcastSelf).toByteArray()
                 websocket.send(authPacket)
             }
 
             override fun onMessage(message: String) {
-                val inboundPacket = message.fromJson<OutboundMessagePacket>()
-                val channel = inboundPacket.channel
+            }
+
+            override fun onMessage(bytes: ByteBuffer) {
+                val packet = OutboundMessageBytesPacket.fromByteArray(bytes.array())
+                val channel = packet.channel
                 subscribers[channel]?.forEach { subscriber ->
-                    subscriber.onMessage(channel, inboundPacket.body, inboundPacket)
+                    subscriber.onMessage(channel, bytes.array(), packet)
                 }
             }
 
@@ -56,10 +55,12 @@ class Kwsify(private val address: String) : IOperation {
     }
 
     override fun publish(channel: String, payload: String): Boolean {
-        val packet = PublishPacket(OPCode.PUBLISH, payload, channel)
-        subscribers[channel]?.forEach { subscriber ->
-            websocket.send(packet)
-        }
+        return this.publish(channel, payload.toByteArray())
+    }
+
+    override fun publish(channel: String, payload: ByteArray): Boolean {
+        val packet = PublishPacket(OPCode.PUBLISH, payload, channel).toByteArray()
+        websocket.send(packet)
         return true
     }
 
@@ -76,7 +77,7 @@ class Kwsify(private val address: String) : IOperation {
         try {
             if (subscribers.containsKey(channel)) {
                 subscribers.remove(channel)
-                val packet = UnsubscribePacket(OPCode.EXIT_CHANNEL, channel)
+                val packet = UnsubscribePacket(OPCode.EXIT_CHANNEL, channel).toByteArray()
                 websocket.send(packet)
                 return true
             }
