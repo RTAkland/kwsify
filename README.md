@@ -38,7 +38,7 @@ $ java -jar kwsify.jar [--port 8989]
 
 ```kotlin
 repositories {
-    maven("https://repo.rtast.cn/api/v4/projects/49/packages/maven")
+    maven("https://maven.rtast.cn/releases")
 }
 
 ```
@@ -47,11 +47,11 @@ repositories {
 
 ```kotlin
 dependencies {
-    implementation("cn.rtast.kwsify:api:1.1.1")  // 替换成最新版本
+    implementation("cn.rtast.kwsify:api:2.0.0")  // 替换成最新版本
 }
 ```
 
-> 点[这里](https://repo.rtast.cn/RTAkland/kwsify/-/packages)查看所有版本(记得使用`api`模块而不是`kwsify`模块)
+> 点[这里](https://maven.rtast.cn/#/releases/cn/rtast/kwsify/api)查看所有版本(记得使用`api`模块而不是`kwsify`模块)
 
 ### 开始使用
 

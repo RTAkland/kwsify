@@ -85,10 +85,10 @@ allprojects {
 
         repositories {
             maven {
-                url = uri("https://repo.rtast.cn/api/v4/projects/49/packages/maven")
+                url = uri("https://maven.rtast.cn/releases")
                 credentials {
                     username = "RTAkland"
-                    password = System.getenv("GITLAB_TOKEN")
+                    password = System.getenv("PUBLISH_TOKEN")
                 }
             }
         }
