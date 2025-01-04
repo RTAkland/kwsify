@@ -1,4 +1,5 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlin)
@@ -91,5 +92,14 @@ allprojects {
                 }
             }
         }
+    }
+
+    tasks.compileKotlin {
+        compilerOptions.jvmTarget = JvmTarget.JVM_1_8
+    }
+
+    tasks.compileJava {
+        sourceCompatibility = "1.8"
+        targetCompatibility = "1.8"
     }
 }
