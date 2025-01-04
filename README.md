@@ -14,6 +14,11 @@
 
 # 使用
 
+> kwsify使用二进制来发送数据包, 这就意味着你不能使用wscat之类的
+> 纯文本websocket调试器来调试服务端, 我会在下面的文档中给出所有数据包的偏移值
+
+文档地址: https://docs.rtast.cn/#/docs/kwsify/kwsify
+
 ## 服务端
 
 ### 构建
@@ -54,10 +59,11 @@ dependencies {
 fun main() {
     val wsify = Kwsify("ws://127.0.0.1:8080")
     wsify.subscribe("test", true, object : Subscriber {
-        override fun onMessage(channel: String, payload: String, packet: OutboundMessagePacket) {
-            println(packet.body)
-            Thread.sleep(500L)
-            wsify.publish("test", "114514")
+        override fun onMessage(channel: String, payload: ByteArray, packet: OutboundMessageBytesPacket) {
+            // payload是完整的二进制数据包, packet.body是ByteArray形式的任意数据如果确定发送的是纯文本
+            // 那么直接使用String(packet.body)即可还原出纯文本
+            println(String(packet.body))
+          
         }
 
         override fun onClosed(channel: String) {

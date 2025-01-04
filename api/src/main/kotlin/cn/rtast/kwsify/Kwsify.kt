@@ -9,29 +9,41 @@ package cn.rtast.kwsify
 
 import cn.rtast.kwsify.entity.*
 import cn.rtast.kwsify.enums.OPCode
-import cn.rtast.kwsify.util.toJson
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
 import java.net.URI
 import java.nio.ByteBuffer
 import java.util.*
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 class Kwsify(private val address: String) : IOperation {
     private lateinit var websocket: WebSocketClient
     private val subscribers = mutableMapOf<String, MutableList<Subscriber>>()
+    private val executor = Executors.newSingleThreadScheduledExecutor()
+
+    private fun startHeartbeat() {
+        executor.scheduleAtFixedRate({
+            val packet = HeartbeatPacket(OPCode.HEARTBEAT).toByteArray()
+            websocket.send(packet)
+        }, 0, 10, TimeUnit.SECONDS)
+    }
 
     override fun connect(channel: String, broadcastSelf: Boolean) {
         websocket = object : WebSocketClient(URI(address)) {
             override fun onOpen(handshakedata: ServerHandshake) {
                 val authPacket = SubscribePacket(OPCode.JOIN, UUID.randomUUID(), channel, broadcastSelf).toByteArray()
                 websocket.send(authPacket)
+                startHeartbeat()
             }
 
             override fun onMessage(message: String) {
             }
 
             override fun onMessage(bytes: ByteBuffer) {
-                val packet = OutboundMessageBytesPacket.fromByteArray(bytes.array())
+                val opcodePacket = OPCodePacket.fromByteArray(bytes.duplicate())
+                if (opcodePacket.op == OPCode.HEARTBEAT_REPLY) return
+                val packet = OutboundMessageBytesPacket.fromByteArray(bytes)
                 val channel = packet.channel
                 subscribers[channel]?.forEach { subscriber ->
                     subscriber.onMessage(channel, bytes.array(), packet)

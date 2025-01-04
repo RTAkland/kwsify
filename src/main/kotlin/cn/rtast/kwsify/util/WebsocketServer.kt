@@ -7,11 +7,7 @@
 
 package cn.rtast.kwsify.util
 
-import cn.rtast.kwsify.entity.ConnectionState
-import cn.rtast.kwsify.entity.OPCodePacket
-import cn.rtast.kwsify.entity.OutboundMessageBytesPacket
-import cn.rtast.kwsify.entity.PublishPacket
-import cn.rtast.kwsify.entity.SubscribePacket
+import cn.rtast.kwsify.entity.*
 import cn.rtast.kwsify.enums.OPCode
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
@@ -68,7 +64,6 @@ class WebsocketServer(private val port: Int) : WebSocketServer(InetSocketAddress
     override fun onMessage(conn: WebSocket, message: ByteBuffer) {
         try {
             val packet = OPCodePacket.fromByteArray(message.duplicate())
-            val channel = packet.channel
             when (packet.op) {
                 OPCode.JOIN -> {
                     val authPacket = SubscribePacket.fromByteArray(message.duplicate())
@@ -80,7 +75,7 @@ class WebsocketServer(private val port: Int) : WebSocketServer(InetSocketAddress
                         val systemPacket =
                             OutboundMessageBytesPacket(
                                 OPCode.SYSTEM,
-                                "You already joined the channel ($channel)".toByteArray(),
+                                "You already joined the channel (${authPacket.channel})".toByteArray(),
                                 "_system",
                                 sender = this.getSender(conn)
                             ).toByteArray()
@@ -99,10 +94,10 @@ class WebsocketServer(private val port: Int) : WebSocketServer(InetSocketAddress
                     val packet = PublishPacket.fromByteArray(message.duplicate())
                     connectionState.forEach {
                         if (it.websocket != conn || it.broadcastSelf) {
-                            if (it.channel == channel) {
+                            if (it.channel == packet.channel) {
                                 val publishMessagePacket =
                                     OutboundMessageBytesPacket(
-                                        OPCode.MESSAGE, packet.body, channel,
+                                        OPCode.MESSAGE, packet.body, packet.channel,
                                         sender = this.getSender(conn)
                                     ).toByteArray()
                                 it.websocket.send(publishMessagePacket)
@@ -117,6 +112,17 @@ class WebsocketServer(private val port: Int) : WebSocketServer(InetSocketAddress
                         connectionState.removeIf { it.websocket == conn }
                     else nullChannelPacket(conn)
                     println("Connection unsubscribed(${conn.remoteSocketAddress}, ${connection.uuid}: ${connection.channel})")
+                }
+
+                OPCode.HEARTBEAT -> {
+                    val heartbeatPacket =
+                        OutboundMessageBytesPacket(
+                            OPCode.HEARTBEAT_REPLY,
+                            "heartbeat".toByteArray(),
+                            "_system",
+                            sender = this.getSender(conn)
+                        ).toByteArray()
+                    conn.send(heartbeatPacket)
                 }
             }
         } catch (e: Exception) {

@@ -31,10 +31,10 @@ data class OutboundMessageBytesPacket(
         val totalLength = body.size + channelSize + hostSize + addressSize + 8 + 8 + 4 + 4 + 4 + 4 + 8
         val buffer = ByteBuffer.allocate(totalLength)
         buffer.putInt(op) // op: 4 bytes
-        buffer.putInt(body.size) // body size: 4 bytes
-        buffer.put(body) // body data
         buffer.putInt(channelSize) // channel size: 4 bytes
         buffer.put(channel.toByteArray()) // channel data
+        buffer.putInt(body.size) // body size: 4 bytes
+        buffer.put(body) // body data
         buffer.putInt(hostSize) // host size: 4 bytes
         buffer.put(sender.host.toByteArray()) // host data
         buffer.putInt(sender.port) // port: 4 bytes
@@ -46,16 +46,15 @@ data class OutboundMessageBytesPacket(
     }
 
     companion object {
-        fun fromByteArray(bytes: ByteArray): OutboundMessageBytesPacket {
-            val buffer = ByteBuffer.wrap(bytes)
+        fun fromByteArray(buffer: ByteBuffer): OutboundMessageBytesPacket {
             val op = buffer.getInt()
-            val bodySize = buffer.getInt()
-            val body = ByteArray(bodySize)
-            buffer.get(body)
             val channelSize = buffer.getInt()
             val channelBytes = ByteArray(channelSize)
             buffer.get(channelBytes)
             val channel = String(channelBytes)
+            val bodySize = buffer.getInt()
+            val body = ByteArray(bodySize)
+            buffer.get(body)
             val hostSize = buffer.getInt()
             val hostBytes = ByteArray(hostSize)
             buffer.get(hostBytes)

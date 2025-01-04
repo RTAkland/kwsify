@@ -12,4 +12,6 @@ object OPCode {
     const val MESSAGE = 2
     const val JOIN = 3
     const val EXIT_CHANNEL = 4
+    const val HEARTBEAT = 5
+    const val HEARTBEAT_REPLY = 6
 }
