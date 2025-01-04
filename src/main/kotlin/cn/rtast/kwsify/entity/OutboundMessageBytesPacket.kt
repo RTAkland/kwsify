@@ -4,6 +4,7 @@
  * Date: 2025/1/3
  */
 
+@file:JvmName("OutboundMessageBytesPacket")
 
 package cn.rtast.kwsify.entity
 

@@ -4,6 +4,7 @@
  * Date: 2024/11/30
  */
 
+@file:JvmName("Subscriber")
 
 package cn.rtast.kwsify
 

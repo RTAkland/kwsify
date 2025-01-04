@@ -4,6 +4,7 @@
  * Date: 2024/12/1
  */
 
+@file:JvmName("PublishPacket")
 
 package cn.rtast.kwsify.entity
 

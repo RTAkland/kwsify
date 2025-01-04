@@ -4,6 +4,7 @@
  * Date: 2025/1/3
  */
 
+@file:JvmName("OPCodePacket")
 
 package cn.rtast.kwsify.entity
 

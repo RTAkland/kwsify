@@ -4,6 +4,8 @@
  * Date: 2024/11/30
  */
 
+@file:JvmName("OPCode")
+
 package cn.rtast.kwsify.enums
 
 object OPCode {

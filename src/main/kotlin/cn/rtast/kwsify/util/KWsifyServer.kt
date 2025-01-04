@@ -4,6 +4,7 @@
  * Date: 2024/11/30
  */
 
+@file:JvmName("KWsifyServer")
 
 package cn.rtast.kwsify.util
 
@@ -16,7 +17,7 @@ import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.util.*
 
-class WebsocketServer(private val port: Int) : WebSocketServer(InetSocketAddress(port)) {
+class KWsifyServer(private val port: Int) : WebSocketServer(InetSocketAddress(port)) {
 
     private val connectionState = mutableListOf<ConnectionState>()
 

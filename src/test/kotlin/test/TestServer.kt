@@ -7,8 +7,8 @@
 
 package test
 
-import cn.rtast.kwsify.util.WebsocketServer
+import cn.rtast.kwsify.util.KWsifyServer
 
 fun main() {
-    WebsocketServer(8080).start()
+    KWsifyServer(8080).start()
 }

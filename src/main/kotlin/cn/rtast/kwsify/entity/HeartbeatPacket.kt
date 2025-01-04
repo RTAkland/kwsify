@@ -4,6 +4,7 @@
  * Date: 2025/1/4
  */
 
+@file:JvmName("HeartbeatPacket")
 
 package cn.rtast.kwsify.entity
 
