@@ -14,19 +14,12 @@ data class OPCodePacket(val op: Int) {
         val buffer = ByteBuffer.allocate(4)
         return buffer.apply {
             putInt(op)
-//            putInt(channel.toByteArray().size)
-//            put(channel.toByteArray())
         }.array()
     }
 
     companion object {
         fun fromByteArray(buffer: ByteBuffer): OPCodePacket {
             val op = buffer.int
-//            val channelSize = buffer.int
-//            val channelBytes = ByteArray(channelSize).apply {
-//                buffer.get(this)
-//            }
-//            val channel = String(channelBytes)
             return OPCodePacket(op)
         }
     }
