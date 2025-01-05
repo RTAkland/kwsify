@@ -9,5 +9,5 @@ repositories {
 
 dependencies {
     api(libs.java.websocket)
-    api(project(":server"))
+    api(project(":common"))
 }

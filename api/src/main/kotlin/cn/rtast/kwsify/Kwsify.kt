@@ -23,10 +23,11 @@ class Kwsify(private val address: String) : IOperation {
     private val subscribers = mutableMapOf<String, MutableList<Subscriber>>()
     private val executor = Executors.newSingleThreadScheduledExecutor()
 
-    private fun startHeartbeat() {
+    private fun startHeartbeat(channel: String) {
         executor.scheduleAtFixedRate({
             val packet = HeartbeatPacket(OPCode.HEARTBEAT).toByteArray()
             websocket.send(packet)
+            subscribers[channel]?.forEach { it.onHeartbeat(channel) }
         }, 0, 10, TimeUnit.SECONDS)
     }
 
@@ -35,7 +36,8 @@ class Kwsify(private val address: String) : IOperation {
             override fun onOpen(handshakedata: ServerHandshake) {
                 val authPacket = SubscribePacket(OPCode.JOIN, UUID.randomUUID(), channel, broadcastSelf).toByteArray()
                 websocket.send(authPacket)
-                startHeartbeat()
+                subscribers[channel]?.forEach { it.onOpen(channel) }
+                startHeartbeat(channel)
             }
 
             override fun onMessage(message: String) {
@@ -43,7 +45,10 @@ class Kwsify(private val address: String) : IOperation {
 
             override fun onMessage(bytes: ByteBuffer) {
                 val opcodePacket = OPCodePacket.fromByteArray(bytes.duplicate())
-                if (opcodePacket.op == OPCode.HEARTBEAT_REPLY) return
+                if (opcodePacket.op == OPCode.HEARTBEAT_REPLY) {
+                    subscribers[channel]?.forEach { it.onHeartbeatReply(channel) }
+                    return
+                }
                 val packet = OutboundMessageBytesPacket.fromByteArray(bytes)
                 val channel = packet.channel
                 subscribers[channel]?.forEach { subscriber ->

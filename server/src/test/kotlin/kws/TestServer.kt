@@ -1,11 +1,11 @@
 /*
- * Copyright © 2024 RTAkland
+ * Copyright © 2025 RTAkland
  * Author: RTAkland
- * Date: 2024/11/30
+ * Date: 2025/1/5
  */
 
 
-package test
+package kws
 
 import cn.rtast.kwsify.util.KWsifyServer
 

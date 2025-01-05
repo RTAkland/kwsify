@@ -1,7 +1,7 @@
 /*
- * Copyright © 2024 RTAkland
+ * Copyright © 2025 RTAkland
  * Author: RTAkland
- * Date: 2024/12/1
+ * Date: 2025/1/5
  */
 
 @file:JvmName("ConnectionState")

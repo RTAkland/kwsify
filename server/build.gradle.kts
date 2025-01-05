@@ -6,6 +6,7 @@ plugins {
 }
 
 dependencies {
+    implementation(project(":common"))
     implementation(libs.gson)
     implementation(libs.kotlinx.cli)
     implementation(libs.java.websocket)
