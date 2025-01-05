@@ -38,7 +38,7 @@ $ java -jar kwsify.jar [--port 8989]
 
 ```kotlin
 repositories {
-    maven("https://maven.rtast.cn/releases")
+    maven("https://pkg.rtast.cn/releases")
 }
 
 ```
