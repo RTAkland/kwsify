@@ -19,6 +19,8 @@
 
 文档地址: https://docs.rtast.cn/#/docs/kwsify/kwsify
 
+[这里](https://repo.rtast.cn/RTAkland/rautiotransfer)是一个示例项目用于将本地的音频文件传输给其他客户端
+
 ## 服务端
 
 ### 构建
