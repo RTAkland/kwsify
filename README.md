@@ -47,7 +47,7 @@ repositories {
 
 ```kotlin
 dependencies {
-    implementation("cn.rtast.kwsify:api:2.0.0")  // 替换成最新版本
+    implementation("cn.rtast:kwsify-api:2.0.0")  // 替换成最新版本
 }
 ```
 
