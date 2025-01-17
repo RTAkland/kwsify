@@ -40,7 +40,7 @@ $ java -jar kwsify.jar [--port 8989]
 
 ```kotlin
 repositories {
-    maven("https://pkg.rtast.cn/releases")
+    maven("https://repo.maven.rtast.cn/releases")
 }
 
 ```
